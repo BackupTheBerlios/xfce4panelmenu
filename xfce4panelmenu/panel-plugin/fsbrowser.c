@@ -623,12 +623,23 @@ static void open_file (FsBrowser *browser, char *path, gboolean from_menu)
 {
 	const gchar **commands = NULL, *file = NULL;
 
-	commands = MIME_apps (path);
-
 	if (browser->active && !from_menu)
 		file = g_strjoin ("", s_path, path, NULL);
 	else
 		file = g_strdup (path);
+
+	if (browser->mime_command) {
+		file = g_strjoin (" ", browser->mime_command, path, NULL);
+
+		g_signal_emit_by_name (browser, "completed");
+
+		xfce_exec (file, FALSE, FALSE, NULL);
+
+		g_free (file);
+		return;
+	}
+
+	commands = MIME_apps (path);
 
 	if (commands) {
 		gchar *message;
@@ -879,6 +890,7 @@ fs_browser_init (FsBrowser * fb)
 /* 		fb->dir_pixbuf = NULL; */
 /* 	} */
 
+	fb->mime_command = NULL;
 	fb->mime_check = TRUE;
 	fb->active = TRUE;
 

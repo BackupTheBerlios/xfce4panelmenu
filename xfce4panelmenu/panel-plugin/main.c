@@ -126,6 +126,10 @@ struct menu_start
 
 	GtkWidget *mime_check;
 
+	GtkWidget *mime_builtin;
+	GtkWidget *mime_outside;
+	GtkWidget *mime_entry;
+
 	GtkWidget *user_count;
 	GtkWidget *recent_count;
 	GtkWidget *set_entry;
@@ -450,6 +454,30 @@ GtkWidget *init_general_page (Control *ctrl)
 	gtk_table_attach (GTK_TABLE (table), ms->mime_check, 1, 3, 4, 5,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
 
+	ms->mime_builtin = gtk_radio_button_new (NULL);
+	if (!browser->mime_command) {
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (ms->mime_builtin), TRUE);
+	}
+	gtk_table_attach (GTK_TABLE (table), ms->mime_builtin, 0, 1, 5, 6,
+			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
+
+	label = gtk_label_new ("Use Xfce4 MIME-type module");
+	gtk_table_attach (GTK_TABLE (table), label, 1, 3, 5, 6,
+			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
+
+	ms->mime_outside = gtk_radio_button_new_from_widget
+		(GTK_RADIO_BUTTON (ms->mime_builtin));
+	gtk_table_attach (GTK_TABLE (table), ms->mime_outside, 0, 1, 6, 7,
+			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
+
+	ms->mime_entry = gtk_entry_new ();
+	if (browser->mime_command) {
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (ms->mime_outside), TRUE);
+		gtk_entry_set_text (GTK_ENTRY (ms->mime_entry), browser->mime_command);
+	}
+	gtk_table_attach (GTK_TABLE (table), ms->mime_entry, 1, 3, 6, 7,
+			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
+
 	gtk_box_pack_start (GTK_BOX (vbox), table, FALSE, TRUE, 3);
 
 	return vbox;
@@ -489,6 +517,17 @@ apply_options (gpointer data)
 
 	value = gtk_spin_button_get_value (GTK_SPIN_BUTTON (ms->columns_spin));
 	menu->columns = value;
+
+	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (ms->mime_builtin))) {
+		if (browser->mime_command) {
+			g_free (browser->mime_command);
+			browser->mime_command = NULL;
+		}
+	} else {
+		app = g_strdup (gtk_entry_get_text (GTK_ENTRY (ms->mime_entry)));
+		g_free (browser->mime_command);
+		browser->mime_command = app;
+	}
 
 	app = g_strdup (gtk_entry_get_text (GTK_ENTRY (ms->lock_entry)));
 	if (MENU_START (ms->menustart)->lock_app)
@@ -543,6 +582,13 @@ read_conf (Control *control, xmlNodePtr node)
 	menu = MENU (menu_start_get_menu_widget (MENU_START (ms->menustart)));
 	browser = FS_BROWSER (menu_start_get_browser_widget
 			      (MENU_START (ms->menustart)));
+
+	value = xmlGetProp(node, (const xmlChar *) "mime_app");
+	if (value && (strlen (value) > 0)) {
+		browser->mime_command = value;
+	} else {
+		browser->mime_command = NULL;
+	}
 
 	value = xmlGetProp(node, (const xmlChar *) "mime_check");
 	if (value) {
@@ -630,6 +676,12 @@ write_conf (Control *control, xmlNodePtr node)
 	menu = MENU (menu_start_get_menu_widget (MENU_START (ms->menustart)));
 	browser = FS_BROWSER (menu_start_get_browser_widget
 			      (MENU_START (ms->menustart)));
+
+	if (browser->mime_command) {
+		xmlSetProp(node, (const xmlChar *) "mime_app", browser->mime_command);
+	} else {
+		xmlSetProp(node, (const xmlChar *) "mime_app", "");
+	}
 
 	sprintf (count, "%d", browser->mime_check);
 	xmlSetProp(node, (const xmlChar *) "mime_check", count);

@@ -43,6 +43,7 @@ typedef struct _FsBrowser {
 	GtkWidget *entry;
 	GtkWidget *view;
 
+	gchar *mime_command;
 	gboolean mime_check;
 
 	gboolean active;
