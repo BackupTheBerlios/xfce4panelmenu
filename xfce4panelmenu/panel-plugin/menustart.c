@@ -431,6 +431,8 @@ void menu_start_show (MenuStart * ms, int xpos, int ypos, MenuStartPosition pos)
 	if (!popup_grab_on_window (transfer_window, GDK_CURRENT_TIME))
 		return;
 
+	gtk_widget_set_size_request (GTK_WIDGET (ms), ms->width, ms->height);
+
 	gtk_widget_show (ms->header);
 	gtk_widget_show_all (ms->footbox);
 
@@ -444,9 +446,8 @@ void menu_start_show (MenuStart * ms, int xpos, int ypos, MenuStartPosition pos)
 		gtk_window_move (GTK_WINDOW (ms), xpos, ypos);
 	}
 
-	gtk_widget_set_size_request (GTK_WIDGET (ms), ms->width, ms->height);
-
 	gtk_widget_show (GTK_WIDGET (ms));
+
 	gtk_grab_add (GTK_WIDGET (ms));
 }
 

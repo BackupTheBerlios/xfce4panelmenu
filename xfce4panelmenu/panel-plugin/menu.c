@@ -72,6 +72,7 @@ static GtkWidget *menu_start_create_button_name (char *icon, gchar * text,
 						 GCallback callback, gpointer data);
 static void run_menu_app                        (GtkWidget * self, gpointer data);
 static void repack_rec_apps_buttons             (Menu *menu);
+static void repack_user_buttons                 (Menu *menu, gboolean destroy);
 static void menu_destroy                        (GtkObject *object);
 
 static GtkHBoxClass *parent_class = NULL;
@@ -273,6 +274,11 @@ update_rec_app_list (GList * apps, GObject * obj, Menu *menu)
 void menu_repack_recent_apps (Menu *menu)
 {
 	repack_rec_apps_buttons (menu);
+}
+
+void menu_repack_user_apps (Menu *menu)
+{
+	repack_user_buttons (menu, TRUE);
 }
 
 static void
@@ -685,20 +691,40 @@ static void run_user_action (GtkWidget *self, gpointer data)
 	g_signal_emit_by_name (menu, "completed");
 }
 
-static void repack_user_buttons (Menu *menu)
+static void repack_user_buttons (Menu *menu, gboolean destroy)
 {
 	GList *old_list;
-	GList *tmp;
+	GList *tmp, *tmp2;
+	int i, count;
 
 	old_list = gtk_container_get_children (GTK_CONTAINER (menu->rbox));
+
 	for (tmp = old_list; tmp; tmp = tmp->next) {
 		if (g_object_get_data (tmp->data, "user_action")) {
+			if (!destroy) {
+				g_object_ref (G_OBJECT (tmp->data));
+			}
 			gtk_container_remove (GTK_CONTAINER (menu->rbox),
 					      GTK_WIDGET (tmp->data));
 		}
 	}
 
-	for (tmp = menu->user_actions; tmp; tmp = tmp->next) {
+	for (i = 0; i < COLUMNS_COUNT; i++) {
+		tmp = gtk_container_get_children (GTK_CONTAINER (menu->column_boxes[i]));
+		for (tmp2 = tmp; tmp2; tmp2 = tmp2->next) {
+			if (!destroy) {
+				g_object_ref (G_OBJECT (tmp2->data));
+			}
+			gtk_container_remove (GTK_CONTAINER (menu->column_boxes[i]),
+					      GTK_WIDGET (tmp2->data));
+		}
+		old_list = g_list_concat (old_list, tmp);
+	}
+
+	i = -1;
+	count = 0;
+
+	for (tmp = menu->user_actions; tmp; (tmp = tmp->next) && (i < 10)) {
 		GtkWidget *button;
 		struct user_action *action = (struct user_action *) tmp->data;
 
@@ -706,7 +732,31 @@ static void repack_user_buttons (Menu *menu)
 			(action->icon_path, action->label,
 			 G_CALLBACK (run_user_action), menu);
 		g_object_set_data (G_OBJECT (button), "user_action", action);
-		gtk_box_pack_start (GTK_BOX (menu->rbox), button, FALSE, FALSE, 0);
+
+		if (i == -1) {
+			if (count == menu->user_apps_count) {
+				i++;
+				count = 0;
+			}
+		} else {
+			if (count == (menu->r_apps_count + 1)) {
+				i++;
+				count = 0;
+			}
+		}
+
+		if (i > 9) {
+			gtk_widget_destroy (button);
+			break;
+		}
+
+		if (i == -1) {
+			gtk_box_pack_start (GTK_BOX (menu->rbox), button, FALSE, FALSE, 0);
+		} else {
+			gtk_box_pack_start (GTK_BOX (menu->column_boxes[i]), button,
+					    FALSE, FALSE, 0);
+		}
+		count++;
 	}
 }
 
@@ -769,6 +819,8 @@ GtkWidget *menu_new ()
 	int i = 0;
 
 	menu = MENU (g_object_new (menu_get_type (), NULL));
+
+	menu->user_apps_count = 6;
 
 	if (1) {
 		char *save_file;
@@ -1019,11 +1071,8 @@ void show_menu_widget (GtkWidget *widget)
 		free_user_actions (menu->user_actions);
 
 		menu->user_actions = get_user_actions (menu);
-		repack_user_buttons (menu);
+		repack_user_buttons (menu, TRUE);
 	}
-
-	gtk_widget_show_all (menu->lebox);
-	gtk_widget_show_all (menu->rebox);
 
 	for (i = 0; i < menu->columns - 2; i++) {
 		gtk_widget_show_all (menu->column_eboxes[i]);
@@ -1031,6 +1080,9 @@ void show_menu_widget (GtkWidget *widget)
 	for (; i < COLUMNS_COUNT; i ++) {
 		gtk_widget_hide (menu->column_eboxes[i]);
 	}
+
+	gtk_widget_show_all (menu->lebox);
+	gtk_widget_show_all (menu->rebox);
 
 	gtk_widget_show (widget);
 }

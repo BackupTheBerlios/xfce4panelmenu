@@ -123,6 +123,7 @@ struct menu_start
 
 	GtkWidget *columns_spin;
 
+	GtkWidget *user_count;
 	GtkWidget *recent_count;
 	GtkWidget *set_entry;
 	GtkWidget *lock_entry;
@@ -425,6 +426,17 @@ GtkWidget *init_general_page (Control *ctrl)
 	gtk_table_attach (GTK_TABLE (table), ms->columns_spin, 1, 2, 2, 3,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
 
+	label = gtk_label_new ("Set user apps count in 2nd column");
+	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
+	gtk_table_attach (GTK_TABLE (table), label, 0, 2, 3, 4,
+			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
+	ms->user_count = gtk_spin_button_new_with_range (1, 128, 1);
+	gtk_spin_button_set_increments (GTK_SPIN_BUTTON (ms->user_count), 1, 1);
+	gtk_spin_button_set_value (GTK_SPIN_BUTTON (ms->user_count),
+				   MENU (menu)->user_apps_count);
+	gtk_table_attach (GTK_TABLE (table), ms->user_count, 2, 3, 3, 4,
+			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
+
 	gtk_box_pack_start (GTK_BOX (vbox), table, FALSE, TRUE, 3);
 
 	return vbox;
@@ -442,6 +454,11 @@ apply_options (gpointer data)
 
 	value = gtk_spin_button_get_value (GTK_SPIN_BUTTON (ms->recent_count));
 	menu->r_apps_count = (int) value;
+
+	value = gtk_spin_button_get_value (GTK_SPIN_BUTTON (ms->user_count));
+	menu->user_apps_count = (int) value;
+
+	menu_repack_user_apps (menu);
 	menu_repack_recent_apps (menu);
 
 	value = gtk_spin_button_get_value (GTK_SPIN_BUTTON (ms->width_spin));
@@ -513,6 +530,15 @@ read_conf (Control *control, xmlNodePtr node)
 		}
 	}
 
+	value = xmlGetProp(node, (const xmlChar *) "user_app_count");
+	if (value) {
+		int count = atoi (value);
+		if (menu->user_apps_count != count) {
+			menu->user_apps_count = count;
+			menu_repack_user_apps (menu);
+		}
+	}
+
 	value = xmlGetProp(node, (const xmlChar *) "lock_app");
 	if (value) {
 		if (MENU_START (ms->menustart)->lock_app)
@@ -575,6 +601,9 @@ write_conf (Control *control, xmlNodePtr node)
 
 	sprintf (count, "%d", menu->r_apps_count);
 	xmlSetProp(node, (const xmlChar *) "recent_app_count", count);
+
+	sprintf (count, "%d", menu->user_apps_count);
+	xmlSetProp(node, (const xmlChar *) "user_app_count", count);
 
 	sprintf (count, "%d", MENU_START (ms->menustart)->width);
 	xmlSetProp(node, (const xmlChar *) "width", count);
