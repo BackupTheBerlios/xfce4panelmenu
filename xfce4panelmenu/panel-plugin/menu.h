@@ -69,6 +69,7 @@ typedef struct Menu {
 	GtkWidget *lbox;
 	GtkWidget *lebox;
 
+	GtkWidget *recentfilesbutton;
 	GtkWidget *fsbrowserbutton;
 	GtkWidget *fstabbutton;
 } Menu;

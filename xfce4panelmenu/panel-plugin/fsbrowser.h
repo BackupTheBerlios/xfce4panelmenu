@@ -58,5 +58,6 @@ typedef struct _FsBrowser {
 
 GType fs_browser_get_type ();
 GtkWidget *fs_browser_new ();
+GtkWidget *fs_browser_get_recent_files_menu (FsBrowser *browser);
 
 #endif /* _FSBROWSER_H */

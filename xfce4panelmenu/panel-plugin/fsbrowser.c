@@ -1007,3 +1007,27 @@ static void fs_browser_destroy (GtkObject *object)
 	if (GTK_OBJECT_CLASS (parent_class)->destroy)
 		(* GTK_OBJECT_CLASS (parent_class)->destroy) (object);
 }
+
+GtkWidget *fs_browser_get_recent_files_menu (FsBrowser *browser)
+{
+	GtkWidget *menu;
+	GtkWidget *item;
+	GList *list;
+
+	menu = gtk_menu_new ();
+
+	for (list = browser->recent_files; list; list = list->next) {
+		gchar *str, *desc;
+
+		str = MIME_get_type ((char *) list->data, TRUE);
+		desc = g_strjoin ("", (char *) list->data,
+				  "\n\t", str, NULL);
+		item = gtk_menu_item_new_with_label (desc);
+		gtk_widget_show (item);
+		gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+	}
+
+	gtk_widget_show_all (menu);
+
+	return menu;
+}

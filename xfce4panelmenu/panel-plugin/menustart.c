@@ -98,6 +98,70 @@ static void private_cb_label_style_set (GtkWidget * widget, GtkStyle * old_style
 	--recursive;
 }
 
+static void
+position_menu (GtkMenu * menu, gint * x, gint * y,
+	       gboolean push_in, gpointer data)
+{
+	GtkWidget *button = (GtkWidget *) data;
+	GtkWidget *parent;
+	int pos_x = 0, pos_y = 0, tmp = 0;
+	GtkRequisition req;
+	GtkAllocation alloc;
+	int sh;
+	GdkScreen *screen;
+
+	screen = gdk_screen_get_default ();
+	sh = gdk_screen_get_height (screen);
+
+	gtk_widget_size_request (GTK_WIDGET (menu), &req);
+
+	alloc = button->allocation;
+
+	*x = button->allocation.x + button->allocation.width - 4;
+	parent = button;
+	while (parent) {
+		if (!GTK_WIDGET_NO_WINDOW (parent)) {
+			gdk_window_get_position (parent->window, &pos_x,
+						 &tmp);
+			*x += pos_x;
+			pos_y += tmp;
+		}
+		parent = parent->parent;
+	}
+	if ((pos_y + button->allocation.y + button->allocation.height / 2) >
+	    sh / 2) {
+		*y = MAX (0,
+			  pos_y + button->allocation.y +
+			  button->allocation.height - req.height);
+	} else {
+		*y = MAX (0, pos_y + button->allocation.y);
+	}
+}
+
+static void menu_deactivated (GtkWidget * self, gpointer data)
+{
+	Menu *menu = (Menu *) data;
+	g_signal_emit_by_name (menu, "getgrab");
+}
+
+static void show_recent_files_menu (GtkWidget *self, gpointer data)
+{
+	guint32 time;
+	GtkWidget *menu;
+	MenuStart *menustart = (MenuStart *) data;
+
+	menu = fs_browser_get_recent_files_menu (FS_BROWSER (menustart->fsbrowser));
+
+	g_signal_connect
+		(G_OBJECT (menu), "deactivate",
+		 G_CALLBACK (menu_deactivated), menustart->menu);
+
+	time = gtk_get_current_event_time ();
+	gtk_menu_popup (GTK_MENU (menu), NULL, NULL,
+			(GtkMenuPositionFunc) position_menu,
+			self, 0, time);
+}
+
 static void show_fstab_widget (GtkWidget *self, gpointer data)
 {
 	MenuStart *menu = (MenuStart *) data;
@@ -294,6 +358,8 @@ static void menu_start_init (MenuStart *ms)
 	gtk_box_pack_start (GTK_BOX (ms->vbox), ms->fsbrowser, TRUE, TRUE, 0);
 
 	ms->menu = menu_new ();
+	g_signal_connect (G_OBJECT (MENU (ms->menu)->recentfilesbutton),
+			  "clicked", G_CALLBACK (show_recent_files_menu), ms);
 	g_signal_connect (G_OBJECT (MENU (ms->menu)->fstabbutton),
 			  "clicked", G_CALLBACK (show_fstab_widget), ms);
 	g_signal_connect (G_OBJECT (MENU (ms->menu)->fsbrowserbutton),

@@ -82,8 +82,8 @@ static guint fs_browser_signals[LAST_SIGNAL] = { 0 };
 
 int rec_apps_cmp (gconstpointer a, gconstpointer b)
 {
-  struct rec_app *A = (struct rec_app *) a;
-  struct rec_app *B = (struct rec_app *) b;
+	struct rec_app *A = (struct rec_app *) a;
+	struct rec_app *B = (struct rec_app *) b;
 
 	return B->count - A->count;
 }
@@ -284,8 +284,7 @@ void menu_repack_user_apps (Menu *menu)
 static void
 run_app (char *app)
 {
-  xfce_exec(app, FALSE, FALSE, NULL);
-  
+	xfce_exec(app, FALSE, FALSE, NULL);
 }
 
 static void
@@ -922,6 +921,9 @@ GtkWidget *menu_new ()
 		("gtk-open", "Browse Files", NULL, NULL);
 	gtk_box_pack_end (GTK_BOX (menu->rbox),
 			  menu->fsbrowserbutton, FALSE, FALSE, 0);
+
+	menu->recentfilesbutton = create_arrow_button ("gtk-index", "Recent Files");
+	gtk_box_pack_end (GTK_BOX (menu->rbox), menu->recentfilesbutton, FALSE, FALSE, 0);
 
 	button = menu_start_create_button ("gtk-preferences", "Settings...",
 					   NULL, NULL);
