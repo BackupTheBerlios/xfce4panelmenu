@@ -37,6 +37,8 @@ enum {
 	DEV,
 	MOUNTED,
 	ICON,
+	FSTYPE,
+	OPTIONS,
 	MARKUP,
 	MARKUP2,
 	STATE,
@@ -128,12 +130,22 @@ static void fs_tab_init (FsTabWidget *ft)
 
 	renderer = gtk_cell_renderer_text_new ();
 	column = gtk_tree_view_column_new_with_attributes
-		(" ", renderer, "markup", MARKUP, NULL);
+		(" ", renderer, "text", DEV, NULL);
 	gtk_tree_view_append_column (GTK_TREE_VIEW (ft->view), column);
 
 	renderer = gtk_cell_renderer_text_new ();
 	column = gtk_tree_view_column_new_with_attributes
-		(" ", renderer, "markup", MARKUP2, NULL);
+		(" ", renderer, "text", PATH, NULL);
+	gtk_tree_view_append_column (GTK_TREE_VIEW (ft->view), column);
+
+	renderer = gtk_cell_renderer_text_new ();
+	column = gtk_tree_view_column_new_with_attributes
+		(" ", renderer, "text", FSTYPE, NULL);
+	gtk_tree_view_append_column (GTK_TREE_VIEW (ft->view), column);
+
+	renderer = gtk_cell_renderer_text_new ();
+	column = gtk_tree_view_column_new_with_attributes
+		(" ", renderer, "text", OPTIONS, NULL);
 	gtk_tree_view_append_column (GTK_TREE_VIEW (ft->view), column);
 
 	renderer = gtk_cell_renderer_text_new ();
@@ -221,6 +233,8 @@ static GtkTreeModel *create_model (FsTabWidget *ft)
 				   G_TYPE_STRING,
 				   G_TYPE_STRING,
 				   G_TYPE_STRING,
+				   G_TYPE_STRING,
+				   G_TYPE_STRING,
 				   G_TYPE_STRING);
 
 	file = fopen ("/etc/fstab", "r");
@@ -256,12 +270,21 @@ static GtkTreeModel *create_model (FsTabWidget *ft)
 				stock_id = "gtk-harddisk";
 			}
 
+			sprintf (line, "\t%s", name);
+			gtk_list_store_set (list, &iter, PATH, line, -1);
+
+			sprintf (line, "%s", dev);
+			gtk_list_store_set (list, &iter, DEV, line, -1);
+
+			sprintf (line, "\t%s", fs);
+			gtk_list_store_set (list, &iter, FSTYPE, line, -1);
+
+			sprintf (line, "\t%s", opt);
+			gtk_list_store_set (list, &iter, OPTIONS, line, -1);
+
 			gtk_list_store_set (list, &iter,
-					    MARKUP, line,
-					    DEV, dev,
 					    STATE, "\t<i>not mounted</i>",
 					    ICON, stock_id,
-					    MARKUP2, fsopt,
 					    -1);
 		}
 	}
@@ -305,7 +328,7 @@ static void update_model (FsTabWidget *ft)
 				if (strcmp (mdev, (char *) tmp->data) == 0) {
 					gtk_list_store_set
 						(GTK_LIST_STORE (model), &iter,
-						 STATE, "<i>mounted</i>",
+						 STATE, "\t<i>mounted</i>",
 						 MOUNTED, TRUE,
 						 -1);
 					break;
@@ -313,7 +336,7 @@ static void update_model (FsTabWidget *ft)
 			}
 			if (!tmp) {
 				gtk_list_store_set (GTK_LIST_STORE (model), &iter,
-						    STATE, "<i>not mounted</i>",
+						    STATE, "\t<i>not mounted</i>",
 						    MOUNTED, FALSE,
 						    -1);
 			}
