@@ -1,0 +1,41 @@
+INSTALL:
+
+	./configure
+	make
+	make install (as root)
+
+
+DESC :
+
+	+---------------------------------------------------------------+
+	|				|				|
+	|				|				|
+	|Recently used applications	|User defined applications	|
+	|menu				| 				|
+	|				|        			|
+	|				|				|
+	|				|				|
+	|				|				|
+	|				|				|
+	|				|				|
+	|				|				|
+	|				|				|
+	|				|				|
+	|				|				|
+	|				|				|
+	|				|				|
+	|				|				|
+	|				|				|
+	|				|				|
+	|				|				|
+	|				|-------------------------------|
+	|				|				|
+	|				|				|
+	|-------------------------------|				|
+	|Applications menu :		|				|
+	|Use the same format as xfdesk- |self explaining		|
+	|top root, so you can copy this	|				|
+	|menu to ~/.config/xfce4/menu-	|				|
+	|start/menu.xml   		|				|
+	|				|				|
+	+---------------------------------------------------------------+
