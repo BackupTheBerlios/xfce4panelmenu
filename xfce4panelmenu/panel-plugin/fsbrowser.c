@@ -616,39 +616,19 @@ static void add_mime (GtkWidget *self, gpointer data)
 	g_free (command);
 }
 
-static void go_selected_dir (GtkTreeView *self, GtkTreePath *treepath,
-			     GtkTreeViewColumn *column, gpointer data)
+static void open_file (FsBrowser *browser, char *path, gboolean from_menu)
 {
-	FsBrowser *browser = (FsBrowser *) data;
-	GtkTreeModel *model;
-	GtkTreeIter iter;
-	gchar *name;
-	const gchar **commands = NULL;
-	struct stat info;
+	const gchar **commands = NULL, *file = NULL;
 
-	model = gtk_tree_view_get_model (self);
-	gtk_tree_model_get_iter (model, &iter, treepath);
-	gtk_tree_model_get (model, &iter, NAME_COLUMN, &name, -1);
-	if (browser->active) {
-		strcat (s_path, name);
-		stat (s_path, &info);
-		if (S_ISDIR (info.st_mode)) {
-			strcat (s_path, "/");
-			s_path_len = strlen (s_path);
-			fs_browser_read_dir (browser);
+	commands = MIME_apps (path);
 
-			return;
-		} else {
-			s_path[s_path_len] = '\0';
-		}
-		if (!S_ISREG (info.st_mode))
-			return;
-	}
-
-	commands = MIME_apps (name);
+	if (browser->active && !from_menu)
+		file = g_strjoin ("", s_path, path, NULL);
+	else
+		file = g_strdup (path);
 
 	if (commands) {
-		gchar *file = NULL, *message;
+		gchar *message;
 		const gchar *command = NULL;
 		GtkWidget *view;
 		GtkWidget *dialog;
@@ -667,11 +647,6 @@ static void go_selected_dir (GtkTreeView *self, GtkTreePath *treepath,
 
 		view = create_apps_list (commands);
 
-		if (browser->active)
-			file = g_strjoin ("", s_path, name, NULL);
-		else
-			file = g_strdup (name);
-
 		dialog = gtk_dialog_new_with_buttons
 			("Choose Application", NULL, GTK_DIALOG_MODAL,
 			 GTK_STOCK_OK, GTK_RESPONSE_ACCEPT,
@@ -688,7 +663,7 @@ static void go_selected_dir (GtkTreeView *self, GtkTreePath *treepath,
 			 GTK_SHADOW_ETCHED_IN);
 		gtk_container_add (GTK_CONTAINER (scroll), view);
 
-		message = g_strjoin ("", "Open file \"", name, "\" with:", NULL);
+		message = g_strjoin ("", "Open file \"", path, "\" with:", NULL);
 		label = gtk_label_new (message);
 		g_free (message);
 		gtk_box_pack_start (GTK_BOX (GTK_DIALOG (dialog)->vbox),
@@ -760,15 +735,10 @@ static void go_selected_dir (GtkTreeView *self, GtkTreePath *treepath,
 		GtkWidget *label;
 		GtkWidget *entry;
 		int response;
-		gchar *file = NULL, *message;
+		gchar *message;
 		const gchar *command = NULL;
 
 		g_signal_emit_by_name (browser, "completed");
-
-		if (browser->active)
-			file = g_strjoin ("", s_path, name, NULL);
-		else
-			file = g_strdup (name);
 
 		dialog = gtk_dialog_new_with_buttons
 			("Choose Application", NULL, GTK_DIALOG_MODAL,
@@ -776,7 +746,7 @@ static void go_selected_dir (GtkTreeView *self, GtkTreePath *treepath,
 			 GTK_STOCK_CANCEL, GTK_RESPONSE_REJECT,
 			 NULL);
 
-		message = g_strjoin ("", "Open file \"", name, "\" with:", NULL);
+		message = g_strjoin ("", "Open file \"", path, "\" with:", NULL);
 		label = gtk_label_new (message);
 		g_free (message);
 		gtk_box_pack_start (GTK_BOX (GTK_DIALOG (dialog)->vbox),
@@ -812,6 +782,37 @@ static void go_selected_dir (GtkTreeView *self, GtkTreePath *treepath,
 
 		gtk_widget_destroy (dialog);
 	}
+}
+
+static void go_selected_dir (GtkTreeView *self, GtkTreePath *treepath,
+			     GtkTreeViewColumn *column, gpointer data)
+{
+	FsBrowser *browser = (FsBrowser *) data;
+	GtkTreeModel *model;
+	GtkTreeIter iter;
+	gchar *name;
+	struct stat info;
+
+	model = gtk_tree_view_get_model (self);
+	gtk_tree_model_get_iter (model, &iter, treepath);
+	gtk_tree_model_get (model, &iter, NAME_COLUMN, &name, -1);
+	if (browser->active) {
+		strcat (s_path, name);
+		stat (s_path, &info);
+		if (S_ISDIR (info.st_mode)) {
+			strcat (s_path, "/");
+			s_path_len = strlen (s_path);
+			fs_browser_read_dir (browser);
+
+			return;
+		} else {
+			s_path[s_path_len] = '\0';
+		}
+		if (!S_ISREG (info.st_mode))
+			return;
+	}
+
+	open_file (browser, name, FALSE);
 }
 
 GType fs_browser_get_type ()
@@ -1008,6 +1009,14 @@ static void fs_browser_destroy (GtkObject *object)
 		(* GTK_OBJECT_CLASS (parent_class)->destroy) (object);
 }
 
+static void open_file_from_menu (GtkWidget *self, gpointer data)
+{
+	char *path;
+
+	path = g_object_get_data (G_OBJECT (self), "path");
+	open_file (FS_BROWSER (data), path, TRUE);
+}
+
 GtkWidget *fs_browser_get_recent_files_menu (FsBrowser *browser)
 {
 	GtkWidget *menu;
@@ -1023,6 +1032,8 @@ GtkWidget *fs_browser_get_recent_files_menu (FsBrowser *browser)
 		desc = g_strjoin ("", (char *) list->data,
 				  "\n\t", str, NULL);
 		item = gtk_menu_item_new_with_label (desc);
+		g_object_set_data (G_OBJECT (item), "path", list->data);
+		g_signal_connect (G_OBJECT (item), "activate", G_CALLBACK (open_file_from_menu), browser);
 		gtk_widget_show (item);
 		gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
 	}
