@@ -39,6 +39,7 @@ typedef struct MenuStart {
 	GtkWidget *header;
 	GtkWidget *menu;
 	GtkWidget *fstab;
+	GtkWidget *fsbrowser;
 
 	gboolean menu_is_shown;
 

@@ -16,11 +16,13 @@ libmenustart_la_SOURCES =							\
 	main.c									\
 	menu.c  \
 	fstab.c \
-	menustart.c
+	menustart.c \
+	fsbrowser.c
 
 libmenustart_la_CFLAGS =							\
 	-DPACKAGE_LOCALE_DIR=\"$(localedir)\"					\
 	-DICONDIR=\"$(datadir)/xfce4/menustart\"				\
+	-DMODULEDIR=\"`pkg-config --variable=libdir libxfcegui4-1.0`/xfce4/modules\"				\
 	@XFCE4_PANEL_CFLAGS@ 
 
 libmenustart_la_LIBADD = 							\

@@ -507,13 +507,15 @@ menu_start_create_button_name (char *icon, gchar * text,
 	GtkWidget *label;
 	GtkWidget *button_hbox;
 	GtkWidget *image;
-	GdkPixbuf *pixbuf;
+	GdkPixbuf *pixbuf = NULL;
 	GtkStyle *style;
 
-	if (icon)
+	if (icon && g_file_test(icon, G_FILE_TEST_EXISTS)) {
 		pixbuf = gdk_pixbuf_new_from_file_at_size
 			(icon, 20, 20, NULL);
-	else {
+	}
+
+	if (!pixbuf) {
 		pixbuf = gdk_pixbuf_new_from_file_at_size
 			(ICONDIR "/xfce4_xicon2.png", 20, 20, NULL);
 	}
@@ -876,9 +878,15 @@ GtkWidget *menu_new ()
 	rebox = gtk_event_box_new ();
 	gtk_container_add (GTK_CONTAINER (rebox), menu->rbox);
 
-	menu->fstabbutton = menu_start_create_button ("gtk-harddisk", "Mount...",
-						      NULL, NULL);
-	gtk_box_pack_end (GTK_BOX (menu->rbox), menu->fstabbutton, FALSE, FALSE, 0);
+	menu->fstabbutton = menu_start_create_button
+		("gtk-harddisk", "Mount...", NULL, NULL);
+	gtk_box_pack_end (GTK_BOX (menu->rbox),
+			  menu->fstabbutton, FALSE, FALSE, 0);
+
+	menu->fsbrowserbutton = menu_start_create_button
+		("gtk-open", "Browse Files", NULL, NULL);
+	gtk_box_pack_end (GTK_BOX (menu->rbox),
+			  menu->fsbrowserbutton, FALSE, FALSE, 0);
 
 	button = menu_start_create_button ("gtk-preferences", "Settings...",
 					   NULL, NULL);

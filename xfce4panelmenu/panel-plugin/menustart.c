@@ -26,6 +26,7 @@
 #include "common.h"
 #include "menu.h"
 #include "fstab.h"
+#include "fsbrowser.h"
 
 static void     menu_start_class_init (MenuStartClass * klass);
 static void     menu_start_init       (MenuStart * ms);
@@ -115,6 +116,22 @@ static void hide_fstab_widget (GtkWidget *self, gpointer data)
 	show_menu_widget (menu->menu);
 }
 
+
+static void show_fsbrowser_widget (GtkWidget *self, gpointer data)
+{
+	MenuStart *menu = (MenuStart *) data;
+
+	gtk_widget_hide (menu->menu);
+	gtk_widget_show_all (menu->fsbrowser);
+}
+
+static void hide_fsbrowser_widget (GtkWidget *self, gpointer data)
+{
+	MenuStart *menu = (MenuStart *) data;
+
+	gtk_widget_hide (menu->fsbrowser);
+	show_menu_widget (menu->menu);
+}
 
 GType menu_start_get_type ()
 {
@@ -211,7 +228,9 @@ static GtkWidget *create_foot_button (gchar *stock_id, gchar *text,
 				NULL);
 
 	label = gtk_label_new (text);
-
+	g_signal_connect_after (G_OBJECT (label), "style_set",
+				G_CALLBACK (private_cb_label_style_set),
+				NULL);
 	button_hbox = gtk_hbox_new (FALSE, 5);
 	gtk_box_pack_start (GTK_BOX (button_hbox), image, FALSE, FALSE, 2);
 	gtk_box_pack_start (GTK_BOX (button_hbox), label, FALSE, FALSE, 2);
@@ -264,9 +283,18 @@ static void menu_start_init (MenuStart *ms)
 			  "completed", G_CALLBACK (hide_cb), ms);
 	gtk_box_pack_start (GTK_BOX (ms->vbox), ms->fstab, TRUE, TRUE, 0);
 
+	ms->fsbrowser = fs_browser_new ();
+	g_signal_connect (G_OBJECT (FS_BROWSER (ms->fsbrowser)->closebutton),
+			  "clicked", G_CALLBACK (hide_fsbrowser_widget), ms);
+	g_signal_connect (G_OBJECT (ms->fsbrowser),
+			  "completed", G_CALLBACK (hide_cb), ms);
+	gtk_box_pack_start (GTK_BOX (ms->vbox), ms->fsbrowser, TRUE, TRUE, 0);
+
 	ms->menu = menu_new ();
 	g_signal_connect (G_OBJECT (MENU (ms->menu)->fstabbutton),
 			  "clicked", G_CALLBACK (show_fstab_widget), ms);
+	g_signal_connect (G_OBJECT (MENU (ms->menu)->fsbrowserbutton),
+			  "clicked", G_CALLBACK (show_fsbrowser_widget), ms);
 	g_signal_connect (G_OBJECT (ms->menu),
 			  "completed", G_CALLBACK (hide_cb), ms);
 	g_signal_connect (G_OBJECT (ms->menu),
@@ -403,6 +431,7 @@ void menu_start_show (MenuStart * ms, int xpos, int ypos, MenuStartPosition pos)
 	gtk_widget_show (ms->header);
 	gtk_widget_show_all (ms->footbox);
 
+	gtk_widget_hide (ms->fsbrowser);
 	gtk_widget_hide (ms->fstab);
 	show_menu_widget (ms->menu);
 
