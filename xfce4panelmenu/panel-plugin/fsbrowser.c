@@ -452,6 +452,10 @@ int fs_browser_read_dir (FsBrowser *browser)
 	gchar *desc;
 	GdkPixbuf *pixbuf = NULL;
 
+	if (!browser->active) {
+		return 0;
+	}
+
 	list = GTK_LIST_STORE (gtk_icon_view_get_model (GTK_ICON_VIEW (browser->view)));
 	gtk_list_store_clear (list);
 
@@ -707,6 +711,7 @@ static void open_file (FsBrowser *browser, char *path, gboolean from_menu)
 		GtkTreeSelection *selection;
 		GtkTreeModel *innermodel;
 		GtkWidget *header;
+		GdkPixbuf *pixbuf;
 		struct mime_dialog md;
 		int response, id;
 
@@ -720,7 +725,10 @@ static void open_file (FsBrowser *browser, char *path, gboolean from_menu)
 			 GTK_STOCK_CANCEL, GTK_RESPONSE_REJECT,
 			 NULL);
 
-		header = create_header (NULL, "Choose Application");
+		pixbuf = gdk_pixbuf_new_from_file_at_size
+			(ICONDIR "/xfce4_xicon2.png", 32, 32, NULL);
+
+		header = create_header (pixbuf, "Choose Application");
 		gtk_box_pack_start (GTK_BOX (GTK_DIALOG (dialog)->vbox),
 				    header, FALSE, FALSE, 2);
 
@@ -734,7 +742,7 @@ static void open_file (FsBrowser *browser, char *path, gboolean from_menu)
 			 GTK_SHADOW_ETCHED_IN);
 		gtk_container_add (GTK_CONTAINER (scroll), view);
 
-		hbox_big = gtk_hbox_new (FALSE, 2);
+		hbox_big = gtk_hbox_new (FALSE, 5);
 
 		gtk_box_pack_start (GTK_BOX (GTK_DIALOG (dialog)->vbox),
 				    hbox_big, TRUE, TRUE, 0);
@@ -749,14 +757,15 @@ static void open_file (FsBrowser *browser, char *path, gboolean from_menu)
 
 		frame = gtk_frame_new (NULL);
 
-		vbox_mini = gtk_vbox_new (TRUE, 2);
+		vbox_mini = gtk_vbox_new (TRUE, 5);
+		gtk_container_set_border_width (GTK_CONTAINER (vbox_mini), 5);
 
 		term = gtk_check_button_new_with_label ("Open in terminal");
-		gtk_box_pack_start (GTK_BOX (vbox_mini), term, FALSE, FALSE, 4);
+		gtk_box_pack_start (GTK_BOX (vbox_mini), term, FALSE, FALSE, 0);
 
 
 		startup = gtk_check_button_new_with_label ("Use startup notification");
-		gtk_box_pack_start (GTK_BOX (vbox_mini), startup, FALSE, FALSE, 4);
+		gtk_box_pack_start (GTK_BOX (vbox_mini), startup, FALSE, FALSE, 0);
 
 		gtk_container_add (GTK_CONTAINER (frame), vbox_mini);
 
@@ -778,6 +787,8 @@ static void open_file (FsBrowser *browser, char *path, gboolean from_menu)
 				  button, FALSE, FALSE, 3);
 
 		vbox_mini = gtk_vbox_new (TRUE, 0);
+		gtk_container_set_border_width (GTK_CONTAINER (vbox_mini), 5);
+
 		gtk_box_pack_start (GTK_BOX (vbox_mini), entry, TRUE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (vbox_mini), hbox, FALSE, FALSE, 1);
 
@@ -786,7 +797,7 @@ static void open_file (FsBrowser *browser, char *path, gboolean from_menu)
 		gtk_box_pack_start (GTK_BOX (vbox),
 				    frame, FALSE, FALSE, 2);
 
-		gtk_widget_set_size_request (dialog, 350, 300);
+		gtk_widget_set_size_request (dialog, 420, 350);
 
 		gtk_widget_show_all (dialog);
 		response = gtk_dialog_run (GTK_DIALOG (dialog));
