@@ -698,11 +698,15 @@ static void open_file (FsBrowser *browser, char *path, gboolean from_menu)
 		GtkWidget *label;
 		GtkWidget *entry;
 		GtkWidget *button;
-		GtkWidget *hbox;
+		GtkWidget *hbox, *hbox_big;
+		GtkWidget *vbox, *vbox_mini;
+		GtkWidget *frame;
 		GtkWidget *scroll;
+		GtkWidget *term, *startup;
 		GtkTreeIter inneriter;
 		GtkTreeSelection *selection;
 		GtkTreeModel *innermodel;
+		GtkWidget *header;
 		struct mime_dialog md;
 		int response, id;
 
@@ -716,6 +720,10 @@ static void open_file (FsBrowser *browser, char *path, gboolean from_menu)
 			 GTK_STOCK_CANCEL, GTK_RESPONSE_REJECT,
 			 NULL);
 
+		header = create_header (NULL, "Choose Application");
+		gtk_box_pack_start (GTK_BOX (GTK_DIALOG (dialog)->vbox),
+				    header, FALSE, FALSE, 2);
+
 		scroll = gtk_scrolled_window_new (NULL, NULL);
 		gtk_scrolled_window_set_policy
 			(GTK_SCROLLED_WINDOW (scroll),
@@ -726,31 +734,59 @@ static void open_file (FsBrowser *browser, char *path, gboolean from_menu)
 			 GTK_SHADOW_ETCHED_IN);
 		gtk_container_add (GTK_CONTAINER (scroll), view);
 
-		message = g_strjoin ("", "Open file \"", path, "\" with:", NULL);
-		label = gtk_label_new (message);
-		g_free (message);
-		gtk_box_pack_start (GTK_BOX (GTK_DIALOG (dialog)->vbox),
-				    label, FALSE, FALSE, 2);
+		hbox_big = gtk_hbox_new (FALSE, 2);
 
 		gtk_box_pack_start (GTK_BOX (GTK_DIALOG (dialog)->vbox),
+				    hbox_big, TRUE, TRUE, 0);
+
+		gtk_box_pack_start (GTK_BOX (hbox_big),
 				    scroll, TRUE, TRUE, 0);
 
-		entry = gtk_entry_new ();
+		vbox = gtk_vbox_new (FALSE, 3);
 
+		gtk_box_pack_start (GTK_BOX (hbox_big),
+				    vbox, FALSE, TRUE, 0);
+
+		frame = gtk_frame_new (NULL);
+
+		vbox_mini = gtk_vbox_new (TRUE, 2);
+
+		term = gtk_check_button_new_with_label ("Open in terminal");
+		gtk_box_pack_start (GTK_BOX (vbox_mini), term, FALSE, FALSE, 4);
+
+
+		startup = gtk_check_button_new_with_label ("Use startup notification");
+		gtk_box_pack_start (GTK_BOX (vbox_mini), startup, FALSE, FALSE, 4);
+
+		gtk_container_add (GTK_CONTAINER (frame), vbox_mini);
+
+		gtk_box_pack_start (GTK_BOX (vbox),
+				    frame, FALSE, FALSE, 4);
+
+		frame = gtk_frame_new (NULL);
+
+		entry = gtk_entry_new ();
 		md.file = file;
 		md.view = (GtkTreeView *) view;
 		md.entry = (GtkEntry *) entry;
 
 		button = gtk_button_new_from_stock ("gtk-add");
 		g_signal_connect (G_OBJECT (button), "clicked", G_CALLBACK (add_mime), &md);
+
 		hbox = gtk_hbox_new (FALSE, 3);
-		gtk_box_pack_start (GTK_BOX (hbox), entry, TRUE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (hbox), button, FALSE, FALSE, 0);
+		gtk_box_pack_end (GTK_BOX (hbox),
+				  button, FALSE, FALSE, 3);
 
-		gtk_box_pack_start (GTK_BOX (GTK_DIALOG (dialog)->vbox),
-				    hbox, FALSE, FALSE, 3);
+		vbox_mini = gtk_vbox_new (TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (vbox_mini), entry, TRUE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (vbox_mini), hbox, FALSE, FALSE, 1);
 
-		gtk_widget_set_size_request (dialog, 300, 300);
+		gtk_container_add (GTK_CONTAINER (frame), vbox_mini);
+
+		gtk_box_pack_start (GTK_BOX (vbox),
+				    frame, FALSE, FALSE, 2);
+
+		gtk_widget_set_size_request (dialog, 350, 300);
 
 		gtk_widget_show_all (dialog);
 		response = gtk_dialog_run (GTK_DIALOG (dialog));
