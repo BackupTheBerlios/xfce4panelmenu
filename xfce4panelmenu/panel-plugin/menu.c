@@ -470,10 +470,11 @@ menu_start_create_button_image (GtkWidget *image, gchar * text,
 
 	button = gtk_button_new ();
 	label = gtk_label_new (text);
+	gtk_label_set_ellipsize (GTK_LABEL (label), PANGO_ELLIPSIZE_END);
 	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
 	button_hbox = gtk_hbox_new (FALSE, 5);
 	gtk_box_pack_start (GTK_BOX (button_hbox), image, FALSE, FALSE, 0);
-	gtk_box_pack_start (GTK_BOX (button_hbox), label, FALSE, FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (button_hbox), label, TRUE, TRUE, 0);
 	gtk_container_add (GTK_CONTAINER (button), button_hbox);
 	gtk_button_set_relief (GTK_BUTTON (button), GTK_RELIEF_NONE);
 

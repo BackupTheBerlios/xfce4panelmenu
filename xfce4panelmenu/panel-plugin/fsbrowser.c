@@ -65,6 +65,9 @@ static GModule *xfmime_icon_cm = NULL;
 xfmime_icon_functions *xfmime_icon_fun = NULL;
 gchar *icon_theme_name=NULL;
 
+static GdkPixbuf *icon = NULL;
+static GdkPixbuf *icon2 = NULL;
+
 enum {
 	NAME_COLUMN = 0,
 	DESC_COLUMN,
@@ -220,7 +223,8 @@ static void show_recent_files (FsBrowser *browser)
 
 	gtk_widget_set_sensitive (browser->entry, FALSE);
 
-	list = GTK_LIST_STORE (gtk_tree_view_get_model (GTK_TREE_VIEW (browser->view)));
+/* 	list = GTK_LIST_STORE (gtk_tree_view_get_model (GTK_TREE_VIEW (browser->view))); */
+	list = GTK_LIST_STORE (gtk_icon_view_get_model (GTK_ICON_VIEW (browser->view)));
 
 	gtk_list_store_clear (list);
 
@@ -246,6 +250,7 @@ static void show_recent_files (FsBrowser *browser)
 		gtk_list_store_set (list, &iter,
 				    NAME_COLUMN, (gchar *) tmp->data,
 				    DESC_COLUMN, desc,
+				    ICON_COLUMN, icon2,
 				    -1);
 		i++;				    
 	}
@@ -414,9 +419,11 @@ int fs_browser_read_dir (FsBrowser *browser)
 	GtkListStore *list;
 	GtkTreeIter iter;
 	gchar *desc;
+	GdkPixbuf *pixbuf;
 
-	list = GTK_LIST_STORE (gtk_tree_view_get_model
-			       (GTK_TREE_VIEW (browser->view)));
+/* 	list = GTK_LIST_STORE (gtk_tree_view_get_model */
+/* 			       (GTK_TREE_VIEW (browser->view))); */
+	list = GTK_LIST_STORE (gtk_icon_view_get_model (GTK_ICON_VIEW (browser->view)));
 	gtk_list_store_clear (list);
 
 	if (browser->dot_files)
@@ -449,11 +456,18 @@ int fs_browser_read_dir (FsBrowser *browser)
 			}
 		}
 
+		if (is_dir) {
+			pixbuf = icon;
+		} else {
+			pixbuf = icon2;
+		}
+
 		gtk_list_store_append (list, &iter);
 		gtk_list_store_set (list, &iter,
 				    NAME_COLUMN, entry[i]->d_name,
 				    DESC_COLUMN, desc,
 				    TYPE_COLUMN, is_dir,
+				    ICON_COLUMN, pixbuf,
 				    -1);
 	}
 
@@ -798,8 +812,8 @@ static void open_file (FsBrowser *browser, char *path, gboolean from_menu)
 	}
 }
 
-static void go_selected_dir (GtkTreeView *self, GtkTreePath *treepath,
-			     GtkTreeViewColumn *column, gpointer data)
+static void go_selected_dir (GtkIconView *self, GtkTreePath *treepath,
+			     /* GtkTreeViewColumn *column, */ gpointer data)
 {
 	FsBrowser *browser = (FsBrowser *) data;
 	GtkTreeModel *model;
@@ -807,7 +821,8 @@ static void go_selected_dir (GtkTreeView *self, GtkTreePath *treepath,
 	gchar *name;
 	struct stat info;
 
-	model = gtk_tree_view_get_model (self);
+/* 	model = gtk_tree_view_get_model (self); */
+	model = gtk_icon_view_get_model (GTK_ICON_VIEW (self));
 	gtk_tree_model_get_iter (model, &iter, treepath);
 	gtk_tree_model_get (model, &iter, NAME_COLUMN, &name, -1);
 	if (browser->active) {
@@ -924,27 +939,35 @@ fs_browser_init (FsBrowser * fb)
 				   G_TYPE_STRING,
 				   GDK_TYPE_PIXBUF, G_TYPE_POINTER,
 				   G_TYPE_BOOLEAN);
-	fb->view = gtk_tree_view_new_with_model (GTK_TREE_MODEL (list));
-	gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (fb->view), FALSE);
+/* 	fb->view = gtk_tree_view_new_with_model (GTK_TREE_MODEL (list)); */
+/* 	gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (fb->view), FALSE); */
+	fb->view = gtk_icon_view_new_with_model (GTK_TREE_MODEL (list));
 
-	g_signal_connect (G_OBJECT (fb->view), "row-activated",
+/* 	g_signal_connect (G_OBJECT (fb->view), "row-activated", */
+/* 			  G_CALLBACK (go_selected_dir), fb); */
+	g_signal_connect (G_OBJECT (fb->view), "item-activated",
 			  G_CALLBACK (go_selected_dir), fb);
 
-	column = gtk_tree_view_column_new ();
-	renderer = gtk_cell_renderer_pixbuf_new ();
-	gtk_tree_view_column_pack_start (column, renderer, FALSE);
-	gtk_tree_view_column_set_attributes (column, renderer,
-					     "pixbuf", ICON_COLUMN, NULL);
-	renderer = gtk_cell_renderer_text_new ();
-	gtk_tree_view_column_pack_start (column, renderer, FALSE);
-	g_object_set (G_OBJECT (renderer), "weight", 500, NULL);
-	gtk_tree_view_column_set_attributes (column, renderer,
-					     "markup", DESC_COLUMN,
-					     "weight-set", TYPE_COLUMN, NULL);
-	gtk_tree_view_column_set_sizing (column,
-					 GTK_TREE_VIEW_COLUMN_AUTOSIZE);
+/* 	column = gtk_tree_view_column_new (); */
+/* 	renderer = gtk_cell_renderer_pixbuf_new (); */
+/* 	gtk_tree_view_column_pack_start (column, renderer, FALSE); */
+/* 	gtk_tree_view_column_set_attributes (column, renderer, */
+/* 					     "pixbuf", ICON_COLUMN, NULL); */
+/* 	renderer = gtk_cell_renderer_text_new (); */
+/* 	gtk_tree_view_column_pack_start (column, renderer, FALSE); */
+/* 	g_object_set (G_OBJECT (renderer), "weight", 1000, NULL); */
+/* 	gtk_tree_view_column_set_attributes (column, renderer, */
+/* 					     "markup", DESC_COLUMN, */
+/* 					     "weight-set", TYPE_COLUMN, NULL); */
+/* 	gtk_tree_view_column_set_sizing (column, */
+/* 					 GTK_TREE_VIEW_COLUMN_AUTOSIZE); */
 
-	gtk_tree_view_append_column (GTK_TREE_VIEW (fb->view), column);
+/* 	gtk_tree_view_append_column (GTK_TREE_VIEW (fb->view), column); */
+	gtk_icon_view_set_markup_column (GTK_ICON_VIEW (fb->view), DESC_COLUMN);
+	gtk_icon_view_set_pixbuf_column (GTK_ICON_VIEW (fb->view), ICON_COLUMN);
+
+	gtk_icon_view_set_orientation (GTK_ICON_VIEW (fb->view), GTK_ORIENTATION_HORIZONTAL);
+	gtk_icon_view_set_item_width (GTK_ICON_VIEW (fb->view), 300);
 
 	scroll = gtk_scrolled_window_new (NULL, NULL);
 	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll),
@@ -990,6 +1013,13 @@ GtkWidget *fs_browser_new ()
 #endif
 
 	MIME_ICON_load_theme ();
+
+	if (icon == NULL) {
+		icon = gdk_pixbuf_new_from_file_at_size (ICONDIR "/xfce4_xicon.png", 24, 24, NULL);
+	}
+	if (icon2 == NULL) {
+		icon2 = gdk_pixbuf_new_from_file_at_size (ICONDIR "/xfce4_xicon2.png", 24, 24, NULL);
+	}
 
 	browser = GTK_WIDGET (g_object_new (fs_browser_get_type (), NULL));
 	path = (gchar *) getenv ("HOME");
