@@ -53,8 +53,8 @@ static GtkWidget *create_button (gchar * stock_id, gchar * text,
 static GtkTreeModel *create_model (FsTabWidget *ft);
 static void update_model (FsTabWidget *ft);
 static void mount_button_click (GtkWidget *self, gpointer data);
-static void row_activated (GtkTreeView *self, GtkTreePath *path,
-			   GtkTreeViewColumn *column, gpointer data);
+static void row_activated (GtkIconView *self, GtkTreePath *path,
+			   /* GtkTreeViewColumn *column, */ gpointer data);
 
 static guint fs_tab_signals[F_LAST_SIGNAL] = { 0 };
 
@@ -119,43 +119,52 @@ static void fs_tab_init (FsTabWidget *ft)
 
 	model = create_model (ft);
 
-	ft->view = gtk_tree_view_new_with_model (model);
-	gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (ft->view), FALSE);
+/* 	ft->view = gtk_tree_view_new_with_model (model); */
+	ft->view = gtk_icon_view_new_with_model (GTK_TREE_MODEL (model));
 
-	renderer = gtk_cell_renderer_pixbuf_new ();
-	g_object_set (G_OBJECT (renderer), "stock-size", 24, NULL);
-	column = gtk_tree_view_column_new_with_attributes
-		(" ", renderer, "stock-id", ICON, NULL);
-	gtk_tree_view_append_column (GTK_TREE_VIEW (ft->view), column);
+/* 	gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (ft->view), FALSE); */
 
-	renderer = gtk_cell_renderer_text_new ();
-	column = gtk_tree_view_column_new_with_attributes
-		(" ", renderer, "text", DEV, NULL);
-	gtk_tree_view_append_column (GTK_TREE_VIEW (ft->view), column);
+/* 	renderer = gtk_cell_renderer_pixbuf_new (); */
+/* 	g_object_set (G_OBJECT (renderer), "stock-size", 24, NULL); */
+/* 	column = gtk_tree_view_column_new_with_attributes */
+/* 		(" ", renderer, "stock-id", ICON, NULL); */
+/* 	gtk_tree_view_append_column (GTK_TREE_VIEW (ft->view), column); */
 
-	renderer = gtk_cell_renderer_text_new ();
-	column = gtk_tree_view_column_new_with_attributes
-		(" ", renderer, "text", PATH, NULL);
-	gtk_tree_view_append_column (GTK_TREE_VIEW (ft->view), column);
+/* 	renderer = gtk_cell_renderer_text_new (); */
+/* 	column = gtk_tree_view_column_new_with_attributes */
+/* 		(" ", renderer, "text", DEV, NULL); */
+/* 	gtk_tree_view_append_column (GTK_TREE_VIEW (ft->view), column); */
 
-	renderer = gtk_cell_renderer_text_new ();
-	column = gtk_tree_view_column_new_with_attributes
-		(" ", renderer, "text", FSTYPE, NULL);
-	gtk_tree_view_append_column (GTK_TREE_VIEW (ft->view), column);
+/* 	renderer = gtk_cell_renderer_text_new (); */
+/* 	column = gtk_tree_view_column_new_with_attributes */
+/* 		(" ", renderer, "text", PATH, NULL); */
+/* 	gtk_tree_view_append_column (GTK_TREE_VIEW (ft->view), column); */
 
-	renderer = gtk_cell_renderer_text_new ();
-	column = gtk_tree_view_column_new_with_attributes
-		(" ", renderer, "text", OPTIONS, NULL);
-	gtk_tree_view_append_column (GTK_TREE_VIEW (ft->view), column);
+/* 	renderer = gtk_cell_renderer_text_new (); */
+/* 	column = gtk_tree_view_column_new_with_attributes */
+/* 		(" ", renderer, "text", FSTYPE, NULL); */
+/* 	gtk_tree_view_append_column (GTK_TREE_VIEW (ft->view), column); */
 
-	renderer = gtk_cell_renderer_text_new ();
-	column = gtk_tree_view_column_new_with_attributes
-		(" ", renderer, "markup", STATE, NULL);
-	gtk_tree_view_append_column (GTK_TREE_VIEW (ft->view), column);
+/* 	renderer = gtk_cell_renderer_text_new (); */
+/* 	column = gtk_tree_view_column_new_with_attributes */
+/* 		(" ", renderer, "text", OPTIONS, NULL); */
+/* 	gtk_tree_view_append_column (GTK_TREE_VIEW (ft->view), column); */
 
-	g_signal_connect (G_OBJECT (ft->view), "row-activated",
+/* 	renderer = gtk_cell_renderer_text_new (); */
+/* 	column = gtk_tree_view_column_new_with_attributes */
+/* 		(" ", renderer, "markup", STATE, NULL); */
+/* 	gtk_tree_view_append_column (GTK_TREE_VIEW (ft->view), column); */
+
+/* 	g_signal_connect (G_OBJECT (ft->view), "row-activated", */
+/* 			  G_CALLBACK (row_activated), ft); */
+	g_signal_connect (G_OBJECT (ft->view), "item-activated",
 			  G_CALLBACK (row_activated), ft);
 
+	gtk_icon_view_set_markup_column (GTK_ICON_VIEW (ft->view), MARKUP);
+	gtk_icon_view_set_pixbuf_column (GTK_ICON_VIEW (ft->view), ICON);
+
+	gtk_icon_view_set_orientation (GTK_ICON_VIEW (ft->view), GTK_ORIENTATION_HORIZONTAL);
+	gtk_icon_view_set_item_width (GTK_ICON_VIEW (ft->view), 300);
 
 	scroll = gtk_scrolled_window_new (NULL, NULL);
 	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll),
@@ -229,7 +238,7 @@ static GtkTreeModel *create_model (FsTabWidget *ft)
 				   G_TYPE_STRING,
 				   G_TYPE_STRING,
 				   G_TYPE_BOOLEAN,
-				   G_TYPE_STRING,
+				   GDK_TYPE_PIXBUF,
 				   G_TYPE_STRING,
 				   G_TYPE_STRING,
 				   G_TYPE_STRING,
@@ -243,6 +252,7 @@ static GtkTreeModel *create_model (FsTabWidget *ft)
 		if (line[0] && line[0] != '#') {
 			char *stock_id;
 			int response;
+			char *markup;
 
 			response = sscanf (line, "%s%s%s%s", dev, name, fs, opt);
 
@@ -282,10 +292,20 @@ static GtkTreeModel *create_model (FsTabWidget *ft)
 			sprintf (line, "\t%s", opt);
 			gtk_list_store_set (list, &iter, OPTIONS, line, -1);
 
+			markup = g_strjoin ("",
+					    "<i><tt>dev:   </tt></i> ", dev, "\n",
+					    "<i><tt>dir:   </tt></i> ", name, "\n",
+					    "<i><tt>fs:    </tt></i> ", fs, "\n",
+					    "<i><tt>opt:   </tt></i> ", opt, "\n",
+					    "<i><tt>state: </tt></i> ", "<i>not mounted</i>", "\n",
+					    NULL);
+
 			gtk_list_store_set (list, &iter,
 					    STATE, "\t<i>not mounted</i>",
-					    ICON, stock_id,
+					    MARKUP, markup,
+					    ICON, gdk_pixbuf_new_from_file (ICONDIR "/xfce4_xicon.png", NULL),
 					    -1);
+			g_free (markup);
 		}
 	}
 
@@ -304,7 +324,8 @@ static void update_model (FsTabWidget *ft)
 	GList *mounted = NULL, *tmp = NULL;
 	char *mdev;
 
-	model = gtk_tree_view_get_model (GTK_TREE_VIEW (ft->view));
+/* 	model = gtk_tree_view_get_model (GTK_TREE_VIEW (ft->view)); */
+	model = gtk_icon_view_get_model (GTK_ICON_VIEW (ft->view));
 
 	if (gtk_tree_model_get_iter_first (model, &iter)) {
 
@@ -356,72 +377,76 @@ void fs_tab_widget_update (FsTabWidget *ft)
 
 static void mount_button_click (GtkWidget *self, gpointer data)
 {
-	FsTabWidget *ft = (FsTabWidget *) data;
-	GtkTreeModel *model;
-	GtkTreeSelection *selection;
-	GtkTreeIter iter;
+/*       	FsTabWidget *ft = (FsTabWidget *) data; */
+/* 	GtkTreeModel *model; */
+/* 	GtkTreeSelection *selection; */
+/* 	GtkTreeIter iter; */
 
-	model = gtk_tree_view_get_model (GTK_TREE_VIEW (ft->view));
-	selection = gtk_tree_view_get_selection (GTK_TREE_VIEW (ft->view));
+/* /\*  	model = gtk_tree_view_get_model (GTK_TREE_VIEW (ft->view)); *\/ */
+/* 	model = gtk_icon_view_get_model (GTK_ICON_VIEW (ft->view)); */
 
-	if (gtk_tree_selection_get_selected (selection, &model, &iter)) {
-		char *dev;
-		gboolean mounted;
-		int fds[2];
-		pid_t pid;
+/* /\*  	selection = gtk_tree_view_get_selection (GTK_TREE_VIEW (ft->view)); *\/ */
+/* 	selection = gtk_icon_view_get_selection (GTK_ICON_VIEW (ft->view)); */
 
-		g_signal_emit_by_name (ft, "completed");
+/* 	if (gtk_tree_selection_get_selected (selection, &model, &iter)) { */
+/* 		char *dev; */
+/* 		gboolean mounted; */
+/* 		int fds[2]; */
+/* 		pid_t pid; */
 
-		gtk_tree_model_get (model, &iter,
-				    DEV, &dev,
-				    MOUNTED, &mounted,
-				    -1);
-		pipe (fds);
-		pid = fork ();
-		if (pid) {/* parent */
-			char message[1024];
-			GtkWidget *dialog;
-			int len = 0;
-			int r = 0;
+/* 		g_signal_emit_by_name (ft, "completed"); */
 
-			close (fds[1]);
-			while ((r = read (fds[0], message + len, 1024 - len))) {
-				len = r + len;
-			}
-			message[len] = '\0';
+/* 		gtk_tree_model_get (model, &iter, */
+/* 				    DEV, &dev, */
+/* 				    MOUNTED, &mounted, */
+/* 				    -1); */
+/* 		pipe (fds); */
+/* 		pid = fork (); */
+/* 		if (pid) {/\* parent *\/ */
+/* 			char message[1024]; */
+/* 			GtkWidget *dialog; */
+/* 			int len = 0; */
+/* 			int r = 0; */
 
-			if (len > 0) {
-				dialog = gtk_message_dialog_new
-					(NULL, GTK_DIALOG_MODAL,
-					 GTK_MESSAGE_ERROR,
-					 GTK_BUTTONS_CLOSE,
-					 message);
-				gtk_dialog_run (GTK_DIALOG (dialog));
-				gtk_widget_destroy (dialog);
-			}
-		} else {
-			close (fds[0]);
-			dup2 (fds[1], STDERR_FILENO);
-			if (mounted) {
-				execlp ("umount", "umount", dev, NULL);
-			} else {
-				execlp ("mount", "mount", dev, NULL);
-			}
-			exit (1);
-		}
-	}
+/* 			close (fds[1]); */
+/* 			while ((r = read (fds[0], message + len, 1024 - len))) { */
+/* 				len = r + len; */
+/* 			} */
+/* 			message[len] = '\0'; */
 
-	g_signal_emit_by_name (ft, "completed");
+/* 			if (len > 0) { */
+/* 				dialog = gtk_message_dialog_new */
+/* 					(NULL, GTK_DIALOG_MODAL, */
+/* 					 GTK_MESSAGE_ERROR, */
+/* 					 GTK_BUTTONS_CLOSE, */
+/* 					 message); */
+/* 				gtk_dialog_run (GTK_DIALOG (dialog)); */
+/* 				gtk_widget_destroy (dialog); */
+/* 			} */
+/* 		} else { */
+/* 			close (fds[0]); */
+/* 			dup2 (fds[1], STDERR_FILENO); */
+/* 			if (mounted) { */
+/* 				execlp ("umount", "umount", dev, NULL); */
+/* 			} else { */
+/* 				execlp ("mount", "mount", dev, NULL); */
+/* 			} */
+/* 			exit (1); */
+/* 		} */
+/* 	} */
+
+/* 	g_signal_emit_by_name (ft, "completed"); */
 }
 
-static void row_activated (GtkTreeView *self, GtkTreePath *path,
-			   GtkTreeViewColumn *column, gpointer data)
+static void row_activated (GtkIconView *self, GtkTreePath *path,
+			   /* GtkTreeViewColumn *column, */ gpointer data)
 {
 	FsTabWidget *ft = (FsTabWidget *) data;
 	GtkTreeModel *model;
 	GtkTreeIter iter;
 
-	model = gtk_tree_view_get_model (GTK_TREE_VIEW (ft->view));
+/* 	model = gtk_tree_view_get_model (GTK_TREE_VIEW (ft->view)); */
+	model = gtk_icon_view_get_model (GTK_ICON_VIEW (ft->view));
 
 	if (gtk_tree_model_get_iter (model, &iter, path)) {
 		char *dev;
