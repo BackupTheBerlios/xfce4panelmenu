@@ -118,6 +118,9 @@ struct menu_start
 	GtkWidget *button;
 	GtkWidget *menustart;
 
+	GtkWidget *width_spin;
+	GtkWidget *height_spin;
+
 	GtkWidget *recent_count;
 	GtkWidget *set_entry;
 	GtkWidget *lock_entry;
@@ -389,6 +392,26 @@ GtkWidget *init_general_page (Control *ctrl)
 	gtk_table_attach (GTK_TABLE (table), button, 2, 3, 0, 1,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
 
+	label = gtk_label_new ("Size (width x height)");
+	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
+	gtk_table_attach (GTK_TABLE (table), label, 0, 1, 1, 2,
+			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
+	ms->width_spin = gtk_spin_button_new (NULL, 1, 0);
+	gtk_spin_button_set_range (GTK_SPIN_BUTTON (ms->width_spin), 1, 1024);
+	gtk_spin_button_set_increments (GTK_SPIN_BUTTON (ms->width_spin), 1, 1);
+	gtk_spin_button_set_value (GTK_SPIN_BUTTON (ms->width_spin),
+				   MENU_START (ms->menustart)->width);
+	gtk_table_attach (GTK_TABLE (table), ms->width_spin, 1, 2, 1, 2,
+			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
+
+	ms->height_spin = gtk_spin_button_new (NULL, 1, 0);
+	gtk_spin_button_set_range (GTK_SPIN_BUTTON (ms->height_spin), 1, 1024);
+	gtk_spin_button_set_increments (GTK_SPIN_BUTTON (ms->height_spin), 1, 1);
+	gtk_spin_button_set_value (GTK_SPIN_BUTTON (ms->height_spin),
+				   MENU_START (ms->menustart)->height);
+	gtk_table_attach (GTK_TABLE (table), ms->height_spin, 2, 3, 1, 2,
+			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
+
 	gtk_box_pack_start (GTK_BOX (vbox), table, FALSE, TRUE, 3);
 
 	return vbox;
@@ -407,6 +430,12 @@ apply_options (gpointer data)
 	value = gtk_spin_button_get_value (GTK_SPIN_BUTTON (ms->recent_count));
 	menu->r_apps_count = (int) value;
 	menu_repack_recent_apps (menu);
+
+	value = gtk_spin_button_get_value (GTK_SPIN_BUTTON (ms->width_spin));
+	MENU_START (ms->menustart)->width = value;
+
+	value = gtk_spin_button_get_value (GTK_SPIN_BUTTON (ms->height_spin));
+	MENU_START (ms->menustart)->height = value;
 
 	app = g_strdup (gtk_entry_get_text (GTK_ENTRY (ms->lock_entry)));
 	if (MENU_START (ms->menustart)->lock_app)
@@ -502,6 +531,16 @@ read_conf (Control *control, xmlNodePtr node)
 			free (menu->term_app);
 		menu->term_app = value;
 	}
+
+	value = xmlGetProp(node, (const xmlChar *) "width");
+	if (value) {
+		MENU_START (ms->menustart)->width = atoi (value);
+	}
+
+	value = xmlGetProp(node, (const xmlChar *) "height");
+	if (value) {
+		MENU_START (ms->menustart)->height = atoi (value);
+	}
 }
 
 static void
@@ -515,6 +554,12 @@ write_conf (Control *control, xmlNodePtr node)
 
 	sprintf (count, "%d", menu->r_apps_count);
 	xmlSetProp(node, (const xmlChar *) "recent_app_count", count);
+
+	sprintf (count, "%d", MENU_START (ms->menustart)->width);
+	xmlSetProp(node, (const xmlChar *) "width", count);
+
+	sprintf (count, "%d", MENU_START (ms->menustart)->height);
+	xmlSetProp(node, (const xmlChar *) "height", count);
 
 	xmlSetProp(node, (const xmlChar *) "set_app", menu->set_app);
 	xmlSetProp(node, (const xmlChar *) "run_app", menu->run_app);
