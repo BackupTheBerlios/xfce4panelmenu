@@ -226,10 +226,15 @@ static GtkTreeModel *create_model (FsTabWidget *ft)
 	file = fopen ("/etc/fstab", "r");
 
 	while (fgets (line, 4096, file)) {
-		if (line[0] != '#') {
+		if (line[0] && line[0] != '#') {
 			char *stock_id;
+			int response;
 
-			sscanf (line, "%s%s%s%s", dev, name, fs, opt);
+			response = sscanf (line, "%s%s%s%s", dev, name, fs, opt);
+
+			if (response != 4) {
+				continue;
+			}
 
 			gtk_list_store_append (list, &iter);
 
@@ -239,10 +244,14 @@ static GtkTreeModel *create_model (FsTabWidget *ft)
 
 			if (strcmp (fs, "iso9660") == 0) {
 				stock_id = "gtk-cdrom";
+			} else if (strcmp (fs, "cd9660") == 0){
+				stock_id = "gtk-cdrom";
 			} else if (strcmp (fs, "swap") == 0){
 				stock_id = "gtk-convert";
 			} else if (strcmp (fs, "proc") == 0){
 				stock_id = "gtk-index";
+			} else if (strcmp (fs, "nfs") == 0){
+				stock_id = "gtk-network";
 			} else {
 				stock_id = "gtk-harddisk";
 			}
