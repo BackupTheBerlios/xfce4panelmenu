@@ -297,6 +297,56 @@ static void edit_user_apps_menu (GtkWidget *self, gpointer data)
 	g_free (command);
 }
 
+GtkWidget *init_browser_page (Control *ctrl)
+{
+	GtkWidget *vbox;
+	GtkWidget *table;
+	GtkWidget *label;
+	FsBrowser *browser;
+	struct menu_start *ms = (struct menu_start *) ctrl->data;
+
+	browser = FS_BROWSER (menu_start_get_browser_widget
+			      (MENU_START (ms->menustart)));
+
+	vbox = gtk_vbox_new (FALSE, 1);
+
+	gtk_container_set_border_width (GTK_CONTAINER (vbox), 5);
+
+	table = gtk_table_new (6, 3, TRUE);
+
+	ms->mime_check = gtk_check_button_new_with_label
+		("Get MIME information when reading directory");
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
+				      (ms->mime_check), browser->mime_check);
+	gtk_table_attach (GTK_TABLE (table), ms->mime_check, 1, 3, 0, 1,
+			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
+
+	ms->mime_builtin = gtk_radio_button_new_with_label
+		(NULL, "Use Xfce4 MIME-type module when opening files");
+	if (!browser->mime_command) {
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (ms->mime_builtin), TRUE);
+	}
+	gtk_table_attach (GTK_TABLE (table), ms->mime_builtin, 0, 3, 1, 2,
+			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
+
+	ms->mime_outside = gtk_radio_button_new_with_label_from_widget
+		(GTK_RADIO_BUTTON (ms->mime_builtin), "or use external program (e.g. rox):");
+	gtk_table_attach (GTK_TABLE (table), ms->mime_outside, 0, 2, 2, 3,
+			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
+
+	ms->mime_entry = gtk_entry_new ();
+	if (browser->mime_command) {
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (ms->mime_outside), TRUE);
+		gtk_entry_set_text (GTK_ENTRY (ms->mime_entry), browser->mime_command);
+	}
+	gtk_table_attach (GTK_TABLE (table), ms->mime_entry, 2, 3, 2, 3,
+			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
+
+	gtk_box_pack_start (GTK_BOX (vbox), table, FALSE, TRUE, 3);
+
+	return vbox;
+}
+
 GtkWidget *init_general_page (Control *ctrl)
 {
 	GtkWidget *vbox;
@@ -317,7 +367,9 @@ GtkWidget *init_general_page (Control *ctrl)
 	browser = FS_BROWSER (menu_start_get_browser_widget
 			      (MENU_START (ms->menustart)));
 
-	vbox = gtk_vbox_new (FALSE, 1);
+	vbox = gtk_vbox_new (FALSE, 5);
+
+	gtk_container_set_border_width (GTK_CONTAINER (vbox), 5);
 
 	table = gtk_table_new (6, 3, TRUE);
 
@@ -447,36 +499,7 @@ GtkWidget *init_general_page (Control *ctrl)
 	gtk_table_attach (GTK_TABLE (table), ms->user_count, 2, 3, 3, 4,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
 
-	ms->mime_check = gtk_check_button_new_with_label
-		("Get MIME information when reading directory");
-	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-				      (ms->mime_check), browser->mime_check);
-	gtk_table_attach (GTK_TABLE (table), ms->mime_check, 1, 3, 4, 5,
-			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
-
-	ms->mime_builtin = gtk_radio_button_new (NULL);
-	if (!browser->mime_command) {
-		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (ms->mime_builtin), TRUE);
-	}
-	gtk_table_attach (GTK_TABLE (table), ms->mime_builtin, 0, 1, 5, 6,
-			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
-
-	label = gtk_label_new ("Use Xfce4 MIME-type module");
-	gtk_table_attach (GTK_TABLE (table), label, 1, 3, 5, 6,
-			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
-
-	ms->mime_outside = gtk_radio_button_new_from_widget
-		(GTK_RADIO_BUTTON (ms->mime_builtin));
-	gtk_table_attach (GTK_TABLE (table), ms->mime_outside, 0, 1, 6, 7,
-			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
-
-	ms->mime_entry = gtk_entry_new ();
-	if (browser->mime_command) {
-		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (ms->mime_outside), TRUE);
-		gtk_entry_set_text (GTK_ENTRY (ms->mime_entry), browser->mime_command);
-	}
-	gtk_table_attach (GTK_TABLE (table), ms->mime_entry, 1, 3, 6, 7,
-			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
+	
 
 	gtk_box_pack_start (GTK_BOX (vbox), table, FALSE, TRUE, 3);
 
@@ -559,12 +582,22 @@ static void
 menustart_create_options (Control *ctrl, GtkContainer *con, GtkWidget *done)
 {
 	GtkWidget *vbox;
+	GtkWidget *notebook;
+	GtkWidget *label;
 
+	notebook = gtk_notebook_new ();
+
+	label = gtk_label_new ("General");
 	vbox = init_general_page (ctrl);
+	gtk_notebook_append_page (GTK_NOTEBOOK (notebook), vbox, label);
 
-	gtk_widget_show_all (vbox);
+	label = gtk_label_new ("Files Browser");
+	vbox = init_browser_page (ctrl);
+	gtk_notebook_append_page (GTK_NOTEBOOK (notebook), vbox, label);
 
-	gtk_container_add (con, vbox);
+	gtk_widget_show_all (notebook);
+
+	gtk_container_add (con, notebook);
 
 	g_signal_connect_swapped
 		(done, "clicked",
