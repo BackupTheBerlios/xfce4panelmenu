@@ -121,6 +121,8 @@ struct menu_start
 	GtkWidget *width_spin;
 	GtkWidget *height_spin;
 
+	GtkWidget *columns_spin;
+
 	GtkWidget *recent_count;
 	GtkWidget *set_entry;
 	GtkWidget *lock_entry;
@@ -412,6 +414,17 @@ GtkWidget *init_general_page (Control *ctrl)
 	gtk_table_attach (GTK_TABLE (table), ms->height_spin, 2, 3, 1, 2,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
 
+	label = gtk_label_new ("Columns");
+	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
+	gtk_table_attach (GTK_TABLE (table), label, 0, 1, 2, 3,
+			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
+	ms->columns_spin = gtk_spin_button_new_with_range (2, 12, 1);
+	gtk_spin_button_set_increments (GTK_SPIN_BUTTON (ms->columns_spin), 1, 1);
+	gtk_spin_button_set_value (GTK_SPIN_BUTTON (ms->columns_spin),
+				   MENU (menu)->columns);
+	gtk_table_attach (GTK_TABLE (table), ms->columns_spin, 1, 2, 2, 3,
+			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
+
 	gtk_box_pack_start (GTK_BOX (vbox), table, FALSE, TRUE, 3);
 
 	return vbox;
@@ -436,6 +449,9 @@ apply_options (gpointer data)
 
 	value = gtk_spin_button_get_value (GTK_SPIN_BUTTON (ms->height_spin));
 	MENU_START (ms->menustart)->height = value;
+
+	value = gtk_spin_button_get_value (GTK_SPIN_BUTTON (ms->columns_spin));
+	menu->columns = value;
 
 	app = g_strdup (gtk_entry_get_text (GTK_ENTRY (ms->lock_entry)));
 	if (MENU_START (ms->menustart)->lock_app)
@@ -541,6 +557,11 @@ read_conf (Control *control, xmlNodePtr node)
 	if (value) {
 		MENU_START (ms->menustart)->height = atoi (value);
 	}
+
+	value = xmlGetProp(node, (const xmlChar *) "columns");
+	if (value) {
+		menu->columns = atoi (value);
+	}
 }
 
 static void
@@ -560,6 +581,9 @@ write_conf (Control *control, xmlNodePtr node)
 
 	sprintf (count, "%d", MENU_START (ms->menustart)->height);
 	xmlSetProp(node, (const xmlChar *) "height", count);
+
+	sprintf (count, "%d", menu->columns);
+	xmlSetProp(node, (const xmlChar *) "columns", count);
 
 	xmlSetProp(node, (const xmlChar *) "set_app", menu->set_app);
 	xmlSetProp(node, (const xmlChar *) "run_app", menu->run_app);

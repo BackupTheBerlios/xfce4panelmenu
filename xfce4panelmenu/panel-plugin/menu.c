@@ -659,6 +659,8 @@ menu_init (Menu * menu)
 	menu->atime = 0;
 	menu->user_actions = NULL;
 
+	menu->columns = 2;
+
 	menu->r_apps_count = 10;
 	menu->set_app = g_strdup ("xfce-setting-show");
 	menu->run_app = g_strdup ("xfrun4");
@@ -764,7 +766,6 @@ GtkWidget *menu_new ()
 	GList *ra;
 	GtkTooltips *tooltips;
 	GtkStyle *style;
-	GtkWidget *rebox;
 	int i = 0;
 
 	menu = MENU (g_object_new (menu_get_type (), NULL));
@@ -874,8 +875,8 @@ GtkWidget *menu_new ()
 
 	menu->rbox = gtk_vbox_new (FALSE, 0);
 
-	rebox = gtk_event_box_new ();
-	gtk_container_add (GTK_CONTAINER (rebox), menu->rbox);
+	menu->rebox = gtk_event_box_new ();
+	gtk_container_add (GTK_CONTAINER (menu->rebox), menu->rbox);
 
 	menu->fstabbutton = menu_start_create_button
 		("gtk-harddisk", "Mount...", NULL, NULL);
@@ -908,7 +909,16 @@ GtkWidget *menu_new ()
 	button = gtk_hseparator_new ();
 	gtk_box_pack_end (GTK_BOX (menu->rbox), button, FALSE, FALSE, 0);
 
-	gtk_box_pack_start (GTK_BOX (menu), rebox, TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (menu), menu->rebox, TRUE, TRUE, 0);
+
+	for (i = 0; i < COLUMNS_COUNT; i++) {
+		menu->column_boxes[i] = gtk_vbox_new (FALSE, 0);
+		menu->column_eboxes[i] = gtk_event_box_new ();
+		gtk_container_add (GTK_CONTAINER (menu->column_eboxes[i]),
+				   menu->column_boxes[i]);
+		gtk_box_pack_start (GTK_BOX (menu), menu->column_eboxes[i],
+				    TRUE, TRUE, 0);
+	}
 
 	return GTK_WIDGET (menu);
 }
@@ -997,6 +1007,7 @@ void show_menu_widget (GtkWidget *widget)
 	Menu *menu = (Menu *) widget;
 	struct stat fi;
 	char *read_file;
+	int i;
 
 	read_file = ms_get_read_file ("userapps.xml");
 	stat (read_file, &fi);
@@ -1011,7 +1022,17 @@ void show_menu_widget (GtkWidget *widget)
 		repack_user_buttons (menu);
 	}
 
-	gtk_widget_show_all (widget);
+	gtk_widget_show_all (menu->lebox);
+	gtk_widget_show_all (menu->rebox);
+
+	for (i = 0; i < menu->columns - 2; i++) {
+		gtk_widget_show_all (menu->column_eboxes[i]);
+	}
+	for (; i < COLUMNS_COUNT; i ++) {
+		gtk_widget_hide (menu->column_eboxes[i]);
+	}
+
+	gtk_widget_show (widget);
 }
 
 static void menu_deactivated (GtkWidget * self, gpointer data)

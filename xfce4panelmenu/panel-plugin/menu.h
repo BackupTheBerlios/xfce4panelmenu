@@ -29,6 +29,8 @@
 #define IS_MENU_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),\
                             MENU_TYPE))
 
+#define COLUMNS_COUNT 10
+
 struct MenuStart;
 
 struct user_action
@@ -45,6 +47,10 @@ typedef struct Menu {
 	GList *user_actions;
 	unsigned int atime;
 
+	int columns;
+	GtkWidget *column_boxes[COLUMNS_COUNT];
+	GtkWidget *column_eboxes[COLUMNS_COUNT];
+
 	int r_apps_count;
 	gchar *set_app;
 	gchar *term_app;
@@ -56,6 +62,7 @@ typedef struct Menu {
 	gboolean grab;
 
 	GtkWidget *rbox;
+	GtkWidget *rebox;
 
 	GtkWidget *lbox;
 	GtkWidget *lebox;
