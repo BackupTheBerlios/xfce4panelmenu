@@ -72,6 +72,7 @@ void menu_start_show (MenuStart * ms, int xpos, int ypos,
 void menu_start_hide (MenuStart * ms);
 
 GtkWidget *menu_start_get_menu_widget (MenuStart * ms);
+GtkWidget *menu_start_get_browser_widget (MenuStart * ms);
 
 gboolean popup_grab_on_window (GdkWindow * window, guint32 activate_time);
 

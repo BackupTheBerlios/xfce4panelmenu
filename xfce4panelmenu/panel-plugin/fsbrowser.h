@@ -43,6 +43,8 @@ typedef struct _FsBrowser {
 	GtkWidget *entry;
 	GtkWidget *view;
 
+	gboolean mime_check;
+
 	gboolean active;
 	GtkWidget *togglerecent;
 
@@ -59,5 +61,6 @@ typedef struct _FsBrowser {
 GType fs_browser_get_type ();
 GtkWidget *fs_browser_new ();
 GtkWidget *fs_browser_get_recent_files_menu (FsBrowser *browser);
+int fs_browser_read_dir (FsBrowser *browser);
 
 #endif /* _FSBROWSER_H */

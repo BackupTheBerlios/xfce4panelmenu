@@ -51,6 +51,11 @@ GtkWidget *menu_start_get_menu_widget (MenuStart * ms)
 	return ms->menu;
 }
 
+GtkWidget *menu_start_get_browser_widget (MenuStart * ms)
+{
+	return ms->fsbrowser;
+}
+
 static void private_cb_eventbox_style_set (GtkWidget * widget, GtkStyle * old_style)
 {
 	static gboolean recursive = 0;
@@ -187,6 +192,7 @@ static void show_fsbrowser_widget (GtkWidget *self, gpointer data)
 
 	gtk_widget_hide (menu->menu);
 	gtk_widget_show_all (menu->fsbrowser);
+	fs_browser_read_dir (FS_BROWSER (menu->fsbrowser));
 }
 
 static void hide_fsbrowser_widget (GtkWidget *self, gpointer data)

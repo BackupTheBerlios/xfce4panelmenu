@@ -54,7 +54,6 @@ static int s_path_len;
 static void fs_browser_class_init (FsBrowserClass *klass);
 static void fs_browser_init (FsBrowser *fb);
 static void fs_browser_destroy (GtkObject *object);
-static int fs_browser_read_dir (FsBrowser *browser);
 
 static GtkVBoxClass *parent_class = NULL;
 static guint fs_browser_signals[LAST_SIGNAL] = { 0 };
@@ -226,13 +225,15 @@ static void show_recent_files (FsBrowser *browser)
 	gtk_list_store_clear (list);
 
 	for (tmp = browser->recent_files; tmp && (i < 50); tmp = tmp->next) {
-		const gchar *str;
+		const gchar *str = NULL;
 		gchar *desc;
 		gchar *path;
 
 		path = (gchar *) tmp->data;
 
-		str = MIME_get_type (path, TRUE);
+		if (browser->mime_check) {
+			str = MIME_get_type (path, TRUE);
+		}
 		if (str) {
 			desc = g_strjoin ("", path,
 					  "\n\t<i>",
@@ -405,7 +406,7 @@ static int sort_dir (const void *a, const void *b)
 	return strcmp ((*A)->d_name, (*B)->d_name);
 }
 
-static int fs_browser_read_dir (FsBrowser *browser)
+int fs_browser_read_dir (FsBrowser *browser)
 {
 	struct dirent **entry;
 	struct stat file_info;
@@ -425,7 +426,7 @@ static int fs_browser_read_dir (FsBrowser *browser)
 
 	for (i = 0; i < len; i++) {
 		gboolean is_dir;
-		const gchar *str;
+		const gchar *str = NULL;
 
 		strcat (s_path, entry[i]->d_name);
 		stat (s_path, &file_info);
@@ -436,7 +437,9 @@ static int fs_browser_read_dir (FsBrowser *browser)
 		} else {
 			is_dir = FALSE;
 
-			str = MIME_get_type (entry[i]->d_name, TRUE);
+			if (browser->mime_check) {
+				str = MIME_get_type (entry[i]->d_name, TRUE);
+			}
 			if (str) {
 				desc = g_strjoin ("", entry[i]->d_name,
 						  "\n\t<i>",
@@ -876,6 +879,7 @@ fs_browser_init (FsBrowser * fb)
 /* 		fb->dir_pixbuf = NULL; */
 /* 	} */
 
+	fb->mime_check = TRUE;
 	fb->active = TRUE;
 
 	gtk_box_set_homogeneous (GTK_BOX (fb), FALSE);
@@ -987,7 +991,7 @@ GtkWidget *fs_browser_new ()
 	strcpy (s_path, FS_BROWSER (browser)->path);
 	s_path_len = strlen (s_path);
 	FS_BROWSER (browser)->dot_files = FALSE;
-	fs_browser_read_dir (FS_BROWSER (browser));
+	/* fs_browser_read_dir (FS_BROWSER (browser)); */
 
 	FS_BROWSER (browser)->recent_files = read_recent_files ();
 
@@ -1026,19 +1030,28 @@ GtkWidget *fs_browser_get_recent_files_menu (FsBrowser *browser)
 	menu = gtk_menu_new ();
 
 	for (list = browser->recent_files; list; list = list->next) {
-		gchar *str, *desc;
+		gchar *str = NULL, *desc;
 
-		str = MIME_get_type ((char *) list->data, TRUE);
-		desc = g_strjoin ("", (char *) list->data,
-				  "\n\t", str, NULL);
+		if (browser->mime_check) {
+			str = MIME_get_type ((char *) list->data, TRUE);
+
+		}
+		if (str) {
+			desc = g_strjoin ("", (gchar *) list->data,
+					  "\n\t", str, NULL);
+		} else {
+			desc = g_strdup ((gchar *) list->data);
+		}
 		item = gtk_menu_item_new_with_label (desc);
 		g_object_set_data (G_OBJECT (item), "path", list->data);
 		g_signal_connect (G_OBJECT (item), "activate", G_CALLBACK (open_file_from_menu), browser);
 		gtk_widget_show (item);
 		gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+		g_free (desc);
 	}
 
 	gtk_widget_show_all (menu);
 
 	return menu;
 }
+

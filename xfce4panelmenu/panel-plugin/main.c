@@ -11,6 +11,7 @@
 
 #include "menustart.h"
 #include "menu.h"
+#include "fsbrowser.h"
 
 /* from xfce sources */
 char *ms_get_save_file (const char *name)
@@ -122,6 +123,8 @@ struct menu_start
 	GtkWidget *height_spin;
 
 	GtkWidget *columns_spin;
+
+	GtkWidget *mime_check;
 
 	GtkWidget *user_count;
 	GtkWidget *recent_count;
@@ -301,11 +304,14 @@ GtkWidget *init_general_page (Control *ctrl)
 	GtkWidget *combo;
 	GtkWidget *entry;
 	GtkWidget *separator;
+	FsBrowser *browser;
 	int i;
 	struct menu_start *ms = (struct menu_start *) ctrl->data;
 
 	menu = menu_start_get_menu_widget
 		(MENU_START (((struct menu_start *) ctrl->data)->menustart));
+	browser = FS_BROWSER (menu_start_get_browser_widget
+			      (MENU_START (ms->menustart)));
 
 	vbox = gtk_vbox_new (FALSE, 1);
 
@@ -437,6 +443,13 @@ GtkWidget *init_general_page (Control *ctrl)
 	gtk_table_attach (GTK_TABLE (table), ms->user_count, 2, 3, 3, 4,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
 
+	ms->mime_check = gtk_check_button_new_with_label
+		("Get MIME information when reading directory");
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
+				      (ms->mime_check), browser->mime_check);
+	gtk_table_attach (GTK_TABLE (table), ms->mime_check, 1, 3, 4, 5,
+			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
+
 	gtk_box_pack_start (GTK_BOX (vbox), table, FALSE, TRUE, 3);
 
 	return vbox;
@@ -449,8 +462,12 @@ apply_options (gpointer data)
 	struct menu_start *ms = (struct menu_start *) data;
 	gchar *app;
 	Menu *menu;
+	FsBrowser *browser;
+	gboolean check;
 
 	menu = MENU (menu_start_get_menu_widget (MENU_START (ms->menustart)));
+	browser = FS_BROWSER (menu_start_get_browser_widget
+			      (MENU_START (ms->menustart)));
 
 	value = gtk_spin_button_get_value (GTK_SPIN_BUTTON (ms->recent_count));
 	menu->r_apps_count = (int) value;
@@ -466,6 +483,9 @@ apply_options (gpointer data)
 
 	value = gtk_spin_button_get_value (GTK_SPIN_BUTTON (ms->height_spin));
 	MENU_START (ms->menustart)->height = value;
+
+	check = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (ms->mime_check));
+	browser->mime_check = check;
 
 	value = gtk_spin_button_get_value (GTK_SPIN_BUTTON (ms->columns_spin));
 	menu->columns = value;
@@ -518,8 +538,17 @@ read_conf (Control *control, xmlNodePtr node)
 	struct menu_start *ms = control->data;
 	xmlChar *value;
 	Menu *menu;
+	FsBrowser *browser;
 
 	menu = MENU (menu_start_get_menu_widget (MENU_START (ms->menustart)));
+	browser = FS_BROWSER (menu_start_get_browser_widget
+			      (MENU_START (ms->menustart)));
+
+	value = xmlGetProp(node, (const xmlChar *) "mime_check");
+	if (value) {
+		int check = atoi (value);
+		browser->mime_check = check;
+	}
 
 	value = xmlGetProp(node, (const xmlChar *) "recent_app_count");
 	if (value) {
@@ -595,9 +624,15 @@ write_conf (Control *control, xmlNodePtr node)
 {
 	struct menu_start *ms = control->data;
 	Menu *menu;
+	FsBrowser *browser;
 	char count[4];
 
 	menu = MENU (menu_start_get_menu_widget (MENU_START (ms->menustart)));
+	browser = FS_BROWSER (menu_start_get_browser_widget
+			      (MENU_START (ms->menustart)));
+
+	sprintf (count, "%d", browser->mime_check);
+	xmlSetProp(node, (const xmlChar *) "mime_check", count);
 
 	sprintf (count, "%d", menu->r_apps_count);
 	xmlSetProp(node, (const xmlChar *) "recent_app_count", count);
