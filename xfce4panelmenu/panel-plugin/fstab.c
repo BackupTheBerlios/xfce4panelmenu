@@ -459,6 +459,7 @@ static void row_activated (GtkTreeView *self, GtkTreePath *path,
 				gtk_dialog_run (GTK_DIALOG (dialog));
 				gtk_widget_destroy (dialog);
 			}
+			waitpid (pid, NULL, 0);
 		} else {
 			close (fds[0]);
 			dup2 (fds[1], STDERR_FILENO);
