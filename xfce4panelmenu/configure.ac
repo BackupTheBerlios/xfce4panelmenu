@@ -19,6 +19,8 @@ AC_PROG_LIBTOOL
 dnl Check for standard header files
 AC_HEADER_STDC
 
+PKG_CHECK_MODULES(GTK, dbh-1.0,,exit)
+
 dnl configure the panel plugin
 XFCE_PANEL_PLUGIN([XFCE4_PANEL], [4.2.0])
 
