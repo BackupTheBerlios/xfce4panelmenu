@@ -82,8 +82,8 @@ static guint fs_browser_signals[LAST_SIGNAL] = { 0 };
 
 int rec_apps_cmp (gconstpointer a, gconstpointer b)
 {
-	struct rec_app *A = (struct rec_app *) a;
-	struct rec_app *B = (struct rec_app *) b;
+  struct rec_app *A = (struct rec_app *) a;
+  struct rec_app *B = (struct rec_app *) b;
 
 	return B->count - A->count;
 }
@@ -284,25 +284,8 @@ void menu_repack_user_apps (Menu *menu)
 static void
 run_app (char *app)
 {
-	pid_t pid;
-
-	pid = fork ();
-	if (pid) {
-
-	} else {
-		wordexp_t words;
-		char **command;
-
-		wordexp (app, &words, 0);
-		command = (char **) malloc ((words.we_wordc + 1) *
-					    sizeof (char *));
-		memcpy (command, words.we_wordv,
-			sizeof (char *) * words.we_wordc);
-		command[words.we_wordc] = NULL;
-
-		execvp (command[0], command);
-		exit (1);
-	}
+  xfce_exec(app, FALSE, FALSE, NULL);
+  
 }
 
 static void
