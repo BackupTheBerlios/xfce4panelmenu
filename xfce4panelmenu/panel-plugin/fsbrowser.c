@@ -212,28 +212,65 @@ static GList *add_recent_file (GList *list, const gchar *path)
 	return g_list_prepend (list, g_strdup (path));
 }
 
+gboolean clear_row_pixbuf (GtkTreeModel *model,
+			   GtkTreePath *path, GtkTreeIter *iter,
+			   gpointer data)
+{
+	GdkPixbuf *pixbuf;
+
+	gtk_tree_model_get (model, ICON_COLUMN, &pixbuf);
+	g_object_unref (G_OBJECT (pixbuf));
+
+	return TRUE;
+}
+
+void clear_model (GtkTreeModel *model) {
+	gtk_tree_model_foreach (model, clear_row_pixbuf, NULL);
+	gtk_list_store_clear (GTK_LIST_STORE (model));
+}
+
 GdkPixbuf *get_mime_icon (gchar *mime_desc) {
 	GdkPixbuf *ppixbuf = NULL, *pixbuf = NULL;
+	gchar *file, **end;
 
-	if (mime_desc) {
-		gchar *file, **end;
-
+	if (mime_desc) {		
 		end = g_strsplit (mime_desc, "/", 2);
 		if (end[1]) {
+			gchar *file_path = NULL;
+
 			file = g_strjoin
-				("", "gnome-mime-", end[0], "-", end[1], ".svg",NULL);
-			ppixbuf = MIME_ICON_create_pixbuf (file);
+				("", "gnome-mime-", end[0], "-", end[1], "",NULL);
+			/* ppixbuf = MIME_ICON_create_pixbuf (file); */
+
+			file_path = xfce_icon_theme_lookup
+				(xfce_icon_theme_get_for_screen (NULL), file, 32);
+
+			ppixbuf = gdk_pixbuf_new_from_file (file_path, NULL);
+
+			g_free (file_path);
 			g_free (file);
 		}
 		g_strfreev (end);
 	}
 
 	if (!ppixbuf) {
-		ppixbuf = MIME_ICON_create_pixbuf ("gnome-fs-regular.png");
+		gchar *file_path = NULL;
+
+		file = g_strdup ("gnome-fs-regular");
+
+		file_path = xfce_icon_theme_lookup
+			(xfce_icon_theme_get_for_screen (NULL), file, 32);
+
+		ppixbuf = gdk_pixbuf_new_from_file (file_path, NULL);
+
+		g_free (file_path);
+		g_free (file);
+/* 		ppixbuf = MIME_ICON_create_pixbuf ("gnome-fs-regular.png"); */
 	}
 	if (ppixbuf) {
 		pixbuf = gdk_pixbuf_scale_simple
 			(ppixbuf, 32, 32, GDK_INTERP_HYPER);
+		g_object_unref (ppixbuf);
 	} else {
 		pixbuf = icon2;
 	}
@@ -255,6 +292,7 @@ static void show_recent_files (FsBrowser *browser)
 	list = GTK_LIST_STORE (gtk_icon_view_get_model (GTK_ICON_VIEW (browser->view)));
 
 	gtk_list_store_clear (list);
+	/* clear_model (GTK_TREE_MODEL (list)); */
 
 	for (tmp = browser->recent_files; tmp && (i < 50); tmp = tmp->next) {
 		const gchar *str = NULL;
@@ -490,10 +528,24 @@ int fs_browser_read_dir (FsBrowser *browser)
 		}
 
 		if (is_dir) {
-			GdkPixbuf *ppixbuf = MIME_ICON_create_pixbuf ("gnome-fs-directory.svg");
+			gchar *file_path = NULL, *file = NULL;
+			GdkPixbuf *ppixbuf;
+
+			file = g_strdup ("gnome-fs-directory");
+
+			file_path = xfce_icon_theme_lookup
+				(xfce_icon_theme_get_for_screen (NULL), file, 32);
+
+			ppixbuf = gdk_pixbuf_new_from_file (file_path, NULL);
+
+			g_free (file_path);
+			g_free (file);
+
+			/* GdkPixbuf *ppixbuf = MIME_ICON_create_pixbuf ("gnome-fs-directory.svg"); */
 			if (ppixbuf) {
 				pixbuf = gdk_pixbuf_scale_simple
 					(ppixbuf, 32, 32, GDK_INTERP_HYPER);
+				g_object_unref (ppixbuf);
 			} else {
 				pixbuf = icon;
 			}
