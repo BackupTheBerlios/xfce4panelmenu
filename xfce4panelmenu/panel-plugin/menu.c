@@ -105,6 +105,16 @@ static GList *get_user_actions (Menu *menu)
 	for (node = node->children; node; node = node->next) {
 		if (xmlStrEqual (node->name, "app")) {
 			struct user_action *action;
+			char *visible = NULL;
+
+			visible = xmlGetProp (node, "visible");
+
+			if (visible && strcmp (visible, "false") == 0) {
+				free (visible);
+				continue;
+			} else if (visible) {
+				free (visible);
+			}
 
 			USER_ACTION_INIT (action);
 
@@ -352,7 +362,10 @@ get_menu (xmlNodePtr node, Menu * start)
 		if (visible && strcmp (visible, "false") == 0) {
 			free (visible);
 			continue;
+		} else if (visible) {
+			free (visible);
 		}
+
 		if (xmlStrEqual (node->name, "menu")) {
 			icon = xmlGetProp (node, "icon");
 			submenu = get_menu (node, start);
@@ -361,8 +374,10 @@ get_menu (xmlNodePtr node, Menu * start)
 			free (prop);
 			if (icon) {
 				GdkPixbuf *normal_pixbuf = NULL;
-				GdkPixbuf *pixbuf =
-					MIME_ICON_create_pixbuf (icon);
+				GdkPixbuf *pixbuf;
+				//					MIME_ICON_create_pixbuf (icon);
+
+				pixbuf = xfce_icon_theme_load (xfce_icon_theme_get_for_screen (NULL), icon, 16);
 
 				if (pixbuf) {
 					normal_pixbuf = gdk_pixbuf_scale_simple
@@ -398,8 +413,10 @@ get_menu (xmlNodePtr node, Menu * start)
 
 			if (icon) {
 				GdkPixbuf *normal_pixbuf = NULL;
-				GdkPixbuf *pixbuf =
-					MIME_ICON_create_pixbuf (icon);
+				GdkPixbuf *pixbuf;
+				//MIME_ICON_create_pixbuf (icon);
+
+				pixbuf = xfce_icon_theme_load (xfce_icon_theme_get_for_screen (NULL), icon, 16);
 
 				if (pixbuf) {
 					normal_pixbuf = gdk_pixbuf_scale_simple
@@ -523,6 +540,9 @@ menu_start_create_button_name (char *icon, gchar * text,
 			(icon, 20, 20, NULL);
 	}
 
+	if (!pixbuf && icon && icon[0] != '/') {
+		pixbuf = xfce_icon_theme_load (xfce_icon_theme_get_for_screen (NULL), icon, 20);
+	}
 	if (!pixbuf) {
 		pixbuf = gdk_pixbuf_new_from_file_at_size
 			(ICONDIR "/xfce4_xicon2.png", 20, 20, NULL);
