@@ -17,7 +17,13 @@
 #ifndef _COMMON_H
 #define _COMMON_H
 
+#include <xfce4-modules/mime.h>
+#include <xfce4-modules/mime_icons.h>
+
 char *ms_get_save_file (const char *name);
 char *ms_get_read_file (const char *name);
+
+xfmime_icon_functions *load_mime_icon_module ();
+xfmime_functions *load_mime_module ();
 
 #endif /* _COMMON_H */

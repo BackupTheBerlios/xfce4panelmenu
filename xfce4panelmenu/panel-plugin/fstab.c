@@ -25,6 +25,7 @@
 #include <libxfcegui4/xfce-exec.h>
 
 #include "fstab.h"
+#include "common.h"
 
 enum {
 	F_COMPLETED,
@@ -57,6 +58,8 @@ static void row_activated (GtkIconView *self, GtkTreePath *path,
 			   /* GtkTreeViewColumn *column, */ gpointer data);
 
 static guint fs_tab_signals[F_LAST_SIGNAL] = { 0 };
+
+extern GModule *xfmime_icon_cm;
 
 GType fs_tab_widget_get_type ()
 {
@@ -253,6 +256,7 @@ static GtkTreeModel *create_model (FsTabWidget *ft)
 			char *stock_id;
 			int response;
 			char *markup;
+			GdkPixbuf *pixbuf;
 
 			response = sscanf (line, "%s%s%s%s", dev, name, fs, opt);
 
@@ -267,17 +271,17 @@ static GtkTreeModel *create_model (FsTabWidget *ft)
 			sprintf (fsopt, "%s\n<i>%s</i>", fs, opt);
 
 			if (strcmp (fs, "iso9660") == 0) {
-				stock_id = "gtk-cdrom";
+				stock_id = "stock_cdrom.png";
 			} else if (strcmp (fs, "cd9660") == 0){
-				stock_id = "gtk-cdrom";
+				stock_id = "stock_cdrom.png";
 			} else if (strcmp (fs, "swap") == 0){
-				stock_id = "gtk-convert";
+				stock_id = "stock_convert.png";
 			} else if (strcmp (fs, "proc") == 0){
-				stock_id = "gtk-index";
+				stock_id = "stock_index.png";
 			} else if (strcmp (fs, "nfs") == 0){
-				stock_id = "gtk-network";
+				stock_id = "stock_network.png";
 			} else {
-				stock_id = "gtk-harddisk";
+				stock_id = "stock_harddisk.png";
 			}
 
 			sprintf (line, "\t%s", name);
@@ -293,17 +297,21 @@ static GtkTreeModel *create_model (FsTabWidget *ft)
 			gtk_list_store_set (list, &iter, OPTIONS, line, -1);
 
 			markup = g_strjoin ("",
-					    "<i><tt>dev:   </tt></i> ", dev, "\n",
-					    "<i><tt>dir:   </tt></i> ", name, "\n",
+					    "<i><tt>dev:   </tt></i> <b>", dev, "</b>\n",
+					    "<i><tt>dir:   </tt></i> <b>", name, "</b>\n",
 					    "<i><tt>fs:    </tt></i> ", fs, "\n",
 					    "<i><tt>opt:   </tt></i> ", opt, "\n",
 					    "<i><tt>state: </tt></i> ", "<i>not mounted</i>", "\n",
 					    NULL);
 
+			pixbuf = MIME_ICON_create_pixbuf (stock_id);
+			if (!pixbuf) {
+
+			}
 			gtk_list_store_set (list, &iter,
 					    STATE, "\t<i>not mounted</i>",
 					    MARKUP, markup,
-					    ICON, gdk_pixbuf_new_from_file (ICONDIR "/xfce4_xicon.png", NULL),
+					    ICON, pixbuf,
 					    -1);
 			g_free (markup);
 		}
@@ -344,23 +352,46 @@ static void update_model (FsTabWidget *ft)
 		fclose (file);
 
 		do {
-			gtk_tree_model_get (model, &iter, DEV, &mdev, -1);
+			char *state;
+			char *path, *fs, *opt;
+			char *markup;
+
+			gtk_tree_model_get (model, &iter,
+					    DEV, &mdev,
+					    PATH, &path,
+					    FSTYPE, &fs,
+					    OPTIONS, &opt,
+					    -1);
 			for (tmp = mounted; tmp; tmp = tmp->next) {
 				if (strcmp (mdev, (char *) tmp->data) == 0) {
+					state = g_strdup ("mounted");
 					gtk_list_store_set
 						(GTK_LIST_STORE (model), &iter,
-						 STATE, "\t<i>mounted</i>",
+/* 						 STATE, "<i>mounted</i>", */
 						 MOUNTED, TRUE,
 						 -1);
 					break;
 				}
 			}
 			if (!tmp) {
+				state = g_strdup ("not mounted");
 				gtk_list_store_set (GTK_LIST_STORE (model), &iter,
-						    STATE, "\t<i>not mounted</i>",
+/* 						    STATE, "<i>not mounted</i>", */
 						    MOUNTED, FALSE,
 						    -1);
 			}
+			markup = g_strjoin ("",
+					    "<i><tt>dev  :   </tt></i><b>", mdev, "</b>\n",
+					    "<i><tt>dir  :   </tt></i><b>", path + 1, "</b>\n",
+					    "<i><tt>fs   :   </tt></i>", fs + 1, "\n",
+					    "<i><tt>opt  :   </tt></i>", opt + 1, "\n",
+					    "<i><tt>state:   </tt></i><i>", state, "</i>\n",
+					    NULL);
+			g_free (state);
+
+			gtk_list_store_set (GTK_LIST_STORE (model), &iter,
+					    MARKUP, markup,
+					    -1);
 		} while (gtk_tree_model_iter_next (model, &iter));
 
 		for (tmp = mounted; tmp; tmp = tmp->next) {

@@ -30,6 +30,8 @@
 #include "menu.h"
 #include "common.h"
 
+extern GModule *xfmime_icon_cm;
+
 enum {
 	COMPLETED,
 	GETGRAB,
@@ -358,12 +360,20 @@ get_menu (xmlNodePtr node, Menu * start)
 			menuitem = gtk_image_menu_item_new_with_label (prop);
 			free (prop);
 			if (icon) {
+				GdkPixbuf *normal_pixbuf = NULL;
 				GdkPixbuf *pixbuf =
-						gdk_pixbuf_new_from_file_at_size
-						(icon, 16,
-						 16, NULL);
+					MIME_ICON_create_pixbuf (icon);
 
-				image = gtk_image_new_from_pixbuf (pixbuf);
+				if (pixbuf) {
+					normal_pixbuf = gdk_pixbuf_scale_simple
+						(pixbuf, 16, 16, GDK_INTERP_HYPER);
+				}
+
+				if (normal_pixbuf) {
+					image = gtk_image_new_from_pixbuf (normal_pixbuf);
+				} else {
+					image = gtk_image_new_from_pixbuf (def);
+				}
 			} else
 				image = gtk_image_new_from_pixbuf (def);
 			gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM
@@ -387,14 +397,24 @@ get_menu (xmlNodePtr node, Menu * start)
 					   icon);
 
 			if (icon) {
+				GdkPixbuf *normal_pixbuf = NULL;
 				GdkPixbuf *pixbuf =
-						gdk_pixbuf_new_from_file_at_size
-						(icon, 16,
-						 16, NULL);
+					MIME_ICON_create_pixbuf (icon);
 
-				image = gtk_image_new_from_pixbuf (pixbuf);
-			} else
+				if (pixbuf) {
+					normal_pixbuf = gdk_pixbuf_scale_simple
+						(pixbuf, 16, 16, GDK_INTERP_HYPER);
+				}
+
+				if (normal_pixbuf) {
+					image = gtk_image_new_from_pixbuf (normal_pixbuf);
+				} else {
+					image = gtk_image_new_from_pixbuf (def);
+				}
+			} else {
 				image = gtk_image_new_from_pixbuf (def);
+			}
+
 			gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM
 						       (menuitem), image);
 

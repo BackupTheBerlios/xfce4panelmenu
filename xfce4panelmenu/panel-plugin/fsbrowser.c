@@ -58,10 +58,10 @@ static void fs_browser_destroy (GtkObject *object);
 static GtkVBoxClass *parent_class = NULL;
 static guint fs_browser_signals[LAST_SIGNAL] = { 0 };
 
-static GModule *xfmime_cm = NULL;
+GModule *xfmime_cm = NULL;
 xfmime_functions *xfmime_fun = NULL;
 
-static GModule *xfmime_icon_cm = NULL;
+GModule *xfmime_icon_cm = NULL;
 xfmime_icon_functions *xfmime_icon_fun = NULL;
 gchar *icon_theme_name=NULL;
 
@@ -133,24 +133,24 @@ xfmime_icon_functions *load_mime_icon_module ()
 {
 	gchar  *module;
 	xfmime_icon_functions *(*module_init)(void);
-    
+
 	if (xfmime_icon_fun) return xfmime_icon_fun;
-    
+
 	module = g_module_build_path(MODULEDIR, "xfce4_mime_icons");
-    
+
 	xfmime_icon_cm = g_module_open (module, 0);
 	if (!xfmime_icon_cm){
 		g_error("%s\n",g_module_error ());
 		exit(1);
 	}
-    
+
 	if (!g_module_symbol (xfmime_icon_cm, "module_init",(gpointer *) &(module_init)) ) {
 		g_error("g_module_symbol(module_init) != FALSE\n");
 		exit(1);
 	}
-    
+
 	xfmime_icon_fun = (*module_init)();
-    
+
 #if 0         
 	/* these functions are imported from the module */
 	if (!g_module_symbol (xfmime_icon_cm, "mime_icon_get_iconset",
@@ -170,8 +170,8 @@ xfmime_icon_functions *load_mime_icon_module ()
 		exit(1);
 	}
 #endif
-    
-	/*g_message ("module %s successfully loaded", library);	    */
+
+	g_message ("module %s successfully loaded", module);
 	g_free(module);
 	return xfmime_icon_fun;
 }
@@ -212,6 +212,35 @@ static GList *add_recent_file (GList *list, const gchar *path)
 	return g_list_prepend (list, g_strdup (path));
 }
 
+GdkPixbuf *get_mime_icon (gchar *mime_desc) {
+	GdkPixbuf *ppixbuf = NULL, *pixbuf = NULL;
+
+	if (mime_desc) {
+		gchar *file, **end;
+
+		end = g_strsplit (mime_desc, "/", 2);
+		if (end[1]) {
+			file = g_strjoin
+				("", "gnome-mime-", end[0], "-", end[1], ".svg",NULL);
+			ppixbuf = MIME_ICON_create_pixbuf (file);
+			g_free (file);
+		}
+		g_strfreev (end);
+	}
+
+	if (!ppixbuf) {
+		ppixbuf = MIME_ICON_create_pixbuf ("gnome-fs-regular.png");
+	}
+	if (ppixbuf) {
+		pixbuf = gdk_pixbuf_scale_simple
+			(ppixbuf, 32, 32, GDK_INTERP_HYPER);
+	} else {
+		pixbuf = icon2;
+	}
+
+	return pixbuf;
+}
+
 static void show_recent_files (FsBrowser *browser)
 {
 	GtkListStore *list;
@@ -223,7 +252,6 @@ static void show_recent_files (FsBrowser *browser)
 
 	gtk_widget_set_sensitive (browser->entry, FALSE);
 
-/* 	list = GTK_LIST_STORE (gtk_tree_view_get_model (GTK_TREE_VIEW (browser->view))); */
 	list = GTK_LIST_STORE (gtk_icon_view_get_model (GTK_ICON_VIEW (browser->view)));
 
 	gtk_list_store_clear (list);
@@ -232,6 +260,7 @@ static void show_recent_files (FsBrowser *browser)
 		const gchar *str = NULL;
 		gchar *desc;
 		gchar *path;
+		GdkPixbuf *ppixbuf = NULL, *pixbuf = NULL;
 
 		path = (gchar *) tmp->data;
 
@@ -246,11 +275,13 @@ static void show_recent_files (FsBrowser *browser)
 			desc = path;
 		}
 
+		pixbuf = get_mime_icon (str);
+
 		gtk_list_store_append (list, &iter);
 		gtk_list_store_set (list, &iter,
 				    NAME_COLUMN, (gchar *) tmp->data,
 				    DESC_COLUMN, desc,
-				    ICON_COLUMN, icon2,
+				    ICON_COLUMN, pixbuf,
 				    -1);
 		i++;				    
 	}
@@ -419,10 +450,8 @@ int fs_browser_read_dir (FsBrowser *browser)
 	GtkListStore *list;
 	GtkTreeIter iter;
 	gchar *desc;
-	GdkPixbuf *pixbuf;
+	GdkPixbuf *pixbuf = NULL;
 
-/* 	list = GTK_LIST_STORE (gtk_tree_view_get_model */
-/* 			       (GTK_TREE_VIEW (browser->view))); */
 	list = GTK_LIST_STORE (gtk_icon_view_get_model (GTK_ICON_VIEW (browser->view)));
 	gtk_list_store_clear (list);
 
@@ -457,9 +486,15 @@ int fs_browser_read_dir (FsBrowser *browser)
 		}
 
 		if (is_dir) {
-			pixbuf = icon;
+			GdkPixbuf *ppixbuf = MIME_ICON_create_pixbuf ("gnome-fs-directory.svg");
+			if (ppixbuf) {
+				pixbuf = gdk_pixbuf_scale_simple
+					(ppixbuf, 32, 32, GDK_INTERP_HYPER);
+			} else {
+				pixbuf = icon;
+			}
 		} else {
-			pixbuf = icon2;
+			pixbuf = get_mime_icon (str);
 		}
 
 		gtk_list_store_append (list, &iter);
@@ -813,7 +848,7 @@ static void open_file (FsBrowser *browser, char *path, gboolean from_menu)
 }
 
 static void go_selected_dir (GtkIconView *self, GtkTreePath *treepath,
-			     /* GtkTreeViewColumn *column, */ gpointer data)
+			     gpointer data)
 {
 	FsBrowser *browser = (FsBrowser *) data;
 	GtkTreeModel *model;
@@ -821,7 +856,6 @@ static void go_selected_dir (GtkIconView *self, GtkTreePath *treepath,
 	gchar *name;
 	struct stat info;
 
-/* 	model = gtk_tree_view_get_model (self); */
 	model = gtk_icon_view_get_model (GTK_ICON_VIEW (self));
 	gtk_tree_model_get_iter (model, &iter, treepath);
 	gtk_tree_model_get (model, &iter, NAME_COLUMN, &name, -1);
@@ -897,14 +931,6 @@ fs_browser_init (FsBrowser * fb)
 	GtkTreeViewColumn *column;
 	GtkCellRenderer *renderer;
 
-/* 	if (dir_icon) { */
-/* 		fb->dir_pixbuf = gdk_pixbuf_new_from_file_at_size (dir_icon, */
-/* 								   24, 24, */
-/* 								   NULL); */
-/* 	} else { */
-/* 		fb->dir_pixbuf = NULL; */
-/* 	} */
-
 	fb->mime_command = NULL;
 	fb->mime_check = TRUE;
 	fb->active = TRUE;
@@ -939,30 +965,11 @@ fs_browser_init (FsBrowser * fb)
 				   G_TYPE_STRING,
 				   GDK_TYPE_PIXBUF, G_TYPE_POINTER,
 				   G_TYPE_BOOLEAN);
-/* 	fb->view = gtk_tree_view_new_with_model (GTK_TREE_MODEL (list)); */
-/* 	gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (fb->view), FALSE); */
 	fb->view = gtk_icon_view_new_with_model (GTK_TREE_MODEL (list));
 
-/* 	g_signal_connect (G_OBJECT (fb->view), "row-activated", */
-/* 			  G_CALLBACK (go_selected_dir), fb); */
 	g_signal_connect (G_OBJECT (fb->view), "item-activated",
 			  G_CALLBACK (go_selected_dir), fb);
 
-/* 	column = gtk_tree_view_column_new (); */
-/* 	renderer = gtk_cell_renderer_pixbuf_new (); */
-/* 	gtk_tree_view_column_pack_start (column, renderer, FALSE); */
-/* 	gtk_tree_view_column_set_attributes (column, renderer, */
-/* 					     "pixbuf", ICON_COLUMN, NULL); */
-/* 	renderer = gtk_cell_renderer_text_new (); */
-/* 	gtk_tree_view_column_pack_start (column, renderer, FALSE); */
-/* 	g_object_set (G_OBJECT (renderer), "weight", 1000, NULL); */
-/* 	gtk_tree_view_column_set_attributes (column, renderer, */
-/* 					     "markup", DESC_COLUMN, */
-/* 					     "weight-set", TYPE_COLUMN, NULL); */
-/* 	gtk_tree_view_column_set_sizing (column, */
-/* 					 GTK_TREE_VIEW_COLUMN_AUTOSIZE); */
-
-/* 	gtk_tree_view_append_column (GTK_TREE_VIEW (fb->view), column); */
 	gtk_icon_view_set_markup_column (GTK_ICON_VIEW (fb->view), DESC_COLUMN);
 	gtk_icon_view_set_pixbuf_column (GTK_ICON_VIEW (fb->view), ICON_COLUMN);
 
@@ -1003,7 +1010,7 @@ GtkWidget *fs_browser_new ()
 	char *path;
 	int len;
 
-#if GTK_CHECK_VERSION (2,4,0)
+#if GTK_CHECK_VERSION (2,6,0)
 	g_object_get (gtk_settings_get_default(), "gtk-icon-theme-name", &icon_theme_name, NULL);
 #else /* gtk < 2.4 */
 	{
@@ -1012,7 +1019,7 @@ GtkWidget *fs_browser_new ()
 	}
 #endif
 
-	MIME_ICON_load_theme ();
+ 	MIME_ICON_load_theme ();
 
 	if (icon == NULL) {
 		icon = gdk_pixbuf_new_from_file_at_size (ICONDIR "/xfce4_xicon.png", 24, 24, NULL);
@@ -1033,7 +1040,6 @@ GtkWidget *fs_browser_new ()
 	strcpy (s_path, FS_BROWSER (browser)->path);
 	s_path_len = strlen (s_path);
 	FS_BROWSER (browser)->dot_files = FALSE;
-	/* fs_browser_read_dir (FS_BROWSER (browser)); */
 
 	FS_BROWSER (browser)->recent_files = read_recent_files ();
 
@@ -1073,6 +1079,8 @@ GtkWidget *fs_browser_get_recent_files_menu (FsBrowser *browser)
 
 	for (list = browser->recent_files; list; list = list->next) {
 		gchar *str = NULL, *desc;
+		GdkPixbuf *pixbuf;
+		GtkWidget *image;
 
 		if (browser->mime_check) {
 			str = MIME_get_type ((char *) list->data, TRUE);
@@ -1084,9 +1092,13 @@ GtkWidget *fs_browser_get_recent_files_menu (FsBrowser *browser)
 		} else {
 			desc = g_strdup ((gchar *) list->data);
 		}
-		item = gtk_menu_item_new_with_label (desc);
+		item = gtk_image_menu_item_new_with_label (desc);
 		g_object_set_data (G_OBJECT (item), "path", list->data);
-		g_signal_connect (G_OBJECT (item), "activate", G_CALLBACK (open_file_from_menu), browser);
+		g_signal_connect (G_OBJECT (item), "activate",
+				  G_CALLBACK (open_file_from_menu), browser);
+		pixbuf = get_mime_icon (str);
+		image = gtk_image_new_from_pixbuf (pixbuf);
+		gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (item), image);
 		gtk_widget_show (item);
 		gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
 		g_free (desc);

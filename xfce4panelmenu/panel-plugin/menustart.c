@@ -349,19 +349,19 @@ static void menu_start_init (MenuStart *ms)
 	g_object_unref (logo);
 	g_free (text);
 
-	ms->fstab = fs_tab_widget_new ();
-	g_signal_connect (G_OBJECT (FS_TAB_WIDGET (ms->fstab)->closebutton),
-			  "clicked", G_CALLBACK (hide_fstab_widget), ms);
-	g_signal_connect (G_OBJECT (ms->fstab),
-			  "completed", G_CALLBACK (hide_cb), ms);
-	gtk_box_pack_start (GTK_BOX (ms->vbox), ms->fstab, TRUE, TRUE, 0);
-
 	ms->fsbrowser = fs_browser_new ();
 	g_signal_connect (G_OBJECT (FS_BROWSER (ms->fsbrowser)->closebutton),
 			  "clicked", G_CALLBACK (hide_fsbrowser_widget), ms);
 	g_signal_connect (G_OBJECT (ms->fsbrowser),
 			  "completed", G_CALLBACK (hide_cb), ms);
 	gtk_box_pack_start (GTK_BOX (ms->vbox), ms->fsbrowser, TRUE, TRUE, 0);
+
+	ms->fstab = fs_tab_widget_new ();
+	g_signal_connect (G_OBJECT (FS_TAB_WIDGET (ms->fstab)->closebutton),
+			  "clicked", G_CALLBACK (hide_fstab_widget), ms);
+	g_signal_connect (G_OBJECT (ms->fstab),
+			  "completed", G_CALLBACK (hide_cb), ms);
+	gtk_box_pack_start (GTK_BOX (ms->vbox), ms->fstab, TRUE, TRUE, 0);
 
 	ms->menu = menu_new ();
 	g_signal_connect (G_OBJECT (MENU (ms->menu)->recentfilesbutton),
