@@ -329,6 +329,7 @@ static void update_model (FsTabWidget *ft)
 	FILE *file;
 	char line[4096];
 	char dev[4096];
+	char buffer[1024];
 	GList *mounted = NULL, *tmp = NULL;
 	char *mdev;
 
@@ -371,6 +372,21 @@ static void update_model (FsTabWidget *ft)
 						 MOUNTED, TRUE,
 						 -1);
 					break;
+				} else {
+					int count = 0;
+
+					count = readlink (mdev, buffer, 1024);
+					if (count > 0) {
+						buffer[count] = '\0';
+						if (strcmp ((char *) tmp->data, buffer) == 0) {
+							state = g_strdup ("mounted");
+							gtk_list_store_set
+								(GTK_LIST_STORE (model), &iter,
+								 MOUNTED, TRUE,
+								 -1);
+							break;
+						}
+					}
 				}
 			}
 			if (!tmp) {
@@ -479,6 +495,8 @@ static void row_activated (GtkIconView *self, GtkTreePath *path,
 /* 	model = gtk_tree_view_get_model (GTK_TREE_VIEW (ft->view)); */
 	model = gtk_icon_view_get_model (GTK_ICON_VIEW (ft->view));
 
+	g_signal_emit_by_name (ft, "completed");
+
 	if (gtk_tree_model_get_iter (model, &iter, path)) {
 		char *dev;
 		gboolean mounted;
@@ -527,6 +545,4 @@ static void row_activated (GtkIconView *self, GtkTreePath *path,
 			exit (1);
 		}
 	}
-
-	g_signal_emit_by_name (ft, "completed");
 }
