@@ -253,6 +253,9 @@ static void menu_start_init (MenuStart *ms)
 
 	ms->menu_is_shown = TRUE;
 
+	ms->width = 400;
+	ms->height = 480;
+
 	gtk_window_set_resizable (GTK_WINDOW (ms), FALSE);
 
 	ms->frame = gtk_frame_new (NULL);
@@ -440,6 +443,8 @@ void menu_start_show (MenuStart * ms, int xpos, int ypos, MenuStartPosition pos)
 	else {
 		gtk_window_move (GTK_WINDOW (ms), xpos, ypos);
 	}
+
+	gtk_widget_set_size_request (GTK_WIDGET (ms), ms->width, ms->height);
 
 	gtk_widget_show (GTK_WIDGET (ms));
 	gtk_grab_add (GTK_WIDGET (ms));

@@ -48,6 +48,9 @@ typedef struct MenuStart {
 	GtkWidget *button_logout;
 	GtkWidget *button_lock;
 
+	int width;
+	int height;
+
 	char *lock_app;
 	char *switch_app;
 
