@@ -482,7 +482,6 @@ menu_start_create_button_image (GtkWidget *image, gchar * text,
 
 	button = gtk_button_new ();
 	label = gtk_label_new (text);
-	gtk_widget_set_size_request (label, 170, 10);
 	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
 	button_hbox = gtk_hbox_new (FALSE, 5);
 	gtk_box_pack_start (GTK_BOX (button_hbox), image, FALSE, FALSE, 0);
