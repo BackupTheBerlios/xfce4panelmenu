@@ -21,6 +21,7 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <wordexp.h>
 
 #include <libxml/parser.h>
@@ -348,6 +349,87 @@ static void rfiles_toggled (GtkToggleButton *self, gpointer data)
 	} else {
 		hide_recent_files (browser);
 	}
+}
+
+struct recent_file {
+	char *URI;
+	char *mime;
+	int timestamp;
+};
+
+static gint recent_files_compare (gconstpointer a, gconstpointer b)
+{
+	struct recent_file *A = (struct recent_file*) a;
+	struct recent_file *B = (struct recent_file*) b;
+
+	return A->timestamp - B->timestamp;
+}
+
+static void free_recent_file (gpointer data, gpointer user_data)
+{
+	struct recent_file *rf = (struct recent_file*) data;
+
+	if (rf->URI) {
+		g_free (rf->URI);
+	}
+	if (rf->mime) {
+		g_free (rf->mime);
+	}
+	free (rf);
+}
+
+static void free_recent_files (GList *files)
+{
+	g_list_foreach (files, free_recent_file, NULL);
+	g_list_free (files);
+}
+
+static GList *read_recent_files_new (void)
+{
+	GList *files = NULL;
+	xmlDocPtr doc = NULL;
+	xmlNodePtr node = NULL;
+	char *read_file;
+	char *home;
+	int fd;
+
+	home = getenv ("HOME");
+	read_file = g_build_path ("/", home, ".recently-used", NULL);
+
+	if (!g_file_test (read_file, G_FILE_TEST_EXISTS)) {
+		return NULL;
+	}
+
+	doc = xmlParseFile (read_file);
+	node = xmlDocGetRootElement (doc);
+
+	for (node = node->children; node; node = node->next) {
+		if (xmlStrEqual (node->name, "RecentItem")) {
+			xmlNodePtr tmp_node = NULL;
+			struct recent_file *rf;
+
+			rf = (struct recent_file *) malloc (sizeof (struct recent_file));
+
+			for (tmp_node = node->children; tmp_node; tmp_node = tmp_node->next) {
+				if (xmlStrEqual (node->name, "URI")) {
+
+				}
+				if (xmlStrEqual (node->name, "Mime-Type")) {
+
+				}
+				if (xmlStrEqual (node->name, "Timestamp")) {
+
+				}
+			}
+			files = g_list_append (files, rf);
+		}
+	}
+
+	files = g_list_sort (files, recent_files_compare);
+
+	g_free (read_file);
+
+	return files;
 }
 
 static GList *read_recent_files (void)
