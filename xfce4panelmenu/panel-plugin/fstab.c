@@ -47,15 +47,14 @@ enum {
 	COLUMNS
 };
 
-static void fs_tab_class_init (FsTabWidgetClass *klass);
-static void fs_tab_init (FsTabWidget *ft);
-static GtkWidget *create_button (gchar * stock_id, gchar * text,
-				 GCallback callback, gpointer data);
-static GtkTreeModel *create_model (FsTabWidget *ft);
-static void update_model (FsTabWidget *ft);
-static void mount_button_click (GtkWidget *self, gpointer data);
-static void row_activated (GtkIconView *self, GtkTreePath *path,
-			   /* GtkTreeViewColumn *column, */ gpointer data);
+static void          fs_tab_class_init  (FsTabWidgetClass *klass);
+static void          fs_tab_init        (FsTabWidget *ft);
+static GtkTreeModel *create_model       (FsTabWidget *ft);
+static void          update_model       (FsTabWidget *ft);
+static void          mount_button_click (GtkWidget *self, gpointer data);
+static void          reload_fstab       (GtkWidget *self, gpointer data);
+static void          row_activated      (GtkIconView *self, GtkTreePath *path,
+					 gpointer data);
 
 static guint fs_tab_signals[F_LAST_SIGNAL] = { 0 };
 
@@ -122,44 +121,7 @@ static void fs_tab_init (FsTabWidget *ft)
 
 	model = create_model (ft);
 
-/* 	ft->view = gtk_tree_view_new_with_model (model); */
 	ft->view = gtk_icon_view_new_with_model (GTK_TREE_MODEL (model));
-
-/* 	gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (ft->view), FALSE); */
-
-/* 	renderer = gtk_cell_renderer_pixbuf_new (); */
-/* 	g_object_set (G_OBJECT (renderer), "stock-size", 24, NULL); */
-/* 	column = gtk_tree_view_column_new_with_attributes */
-/* 		(" ", renderer, "stock-id", ICON, NULL); */
-/* 	gtk_tree_view_append_column (GTK_TREE_VIEW (ft->view), column); */
-
-/* 	renderer = gtk_cell_renderer_text_new (); */
-/* 	column = gtk_tree_view_column_new_with_attributes */
-/* 		(" ", renderer, "text", DEV, NULL); */
-/* 	gtk_tree_view_append_column (GTK_TREE_VIEW (ft->view), column); */
-
-/* 	renderer = gtk_cell_renderer_text_new (); */
-/* 	column = gtk_tree_view_column_new_with_attributes */
-/* 		(" ", renderer, "text", PATH, NULL); */
-/* 	gtk_tree_view_append_column (GTK_TREE_VIEW (ft->view), column); */
-
-/* 	renderer = gtk_cell_renderer_text_new (); */
-/* 	column = gtk_tree_view_column_new_with_attributes */
-/* 		(" ", renderer, "text", FSTYPE, NULL); */
-/* 	gtk_tree_view_append_column (GTK_TREE_VIEW (ft->view), column); */
-
-/* 	renderer = gtk_cell_renderer_text_new (); */
-/* 	column = gtk_tree_view_column_new_with_attributes */
-/* 		(" ", renderer, "text", OPTIONS, NULL); */
-/* 	gtk_tree_view_append_column (GTK_TREE_VIEW (ft->view), column); */
-
-/* 	renderer = gtk_cell_renderer_text_new (); */
-/* 	column = gtk_tree_view_column_new_with_attributes */
-/* 		(" ", renderer, "markup", STATE, NULL); */
-/* 	gtk_tree_view_append_column (GTK_TREE_VIEW (ft->view), column); */
-
-/* 	g_signal_connect (G_OBJECT (ft->view), "row-activated", */
-/* 			  G_CALLBACK (row_activated), ft); */
 	g_signal_connect (G_OBJECT (ft->view), "item-activated",
 			  G_CALLBACK (row_activated), ft);
 
@@ -167,7 +129,7 @@ static void fs_tab_init (FsTabWidget *ft)
 	gtk_icon_view_set_pixbuf_column (GTK_ICON_VIEW (ft->view), ICON);
 
 	gtk_icon_view_set_orientation (GTK_ICON_VIEW (ft->view), GTK_ORIENTATION_HORIZONTAL);
-	gtk_icon_view_set_item_width (GTK_ICON_VIEW (ft->view), 300);
+	gtk_icon_view_set_item_width (GTK_ICON_VIEW (ft->view), 250);
 
 	scroll = gtk_scrolled_window_new (NULL, NULL);
 	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll),
@@ -181,12 +143,17 @@ static void fs_tab_init (FsTabWidget *ft)
 
 	hbox = gtk_hbox_new (TRUE, 0);
 
-	button = create_button ("gtk-harddisk", "Mount/Unmount", NULL, NULL);
+	button = menu_start_create_button ("gtk-harddisk", "Mount/Unmount", NULL, NULL);
 	g_signal_connect (G_OBJECT (button), "clicked",
 			  G_CALLBACK (mount_button_click), ft);
 	gtk_box_pack_start (GTK_BOX (hbox), button, TRUE, TRUE, 0);
 
-	ft->closebutton = create_button ("gtk-close", "Close", NULL, NULL);
+	button = menu_start_create_button ("gtk-refresh", "Reload fstab", NULL, NULL);
+	g_signal_connect (G_OBJECT (button), "clicked",
+			  G_CALLBACK (reload_fstab), ft);
+	gtk_box_pack_start (GTK_BOX (hbox), button, TRUE, TRUE, 0);
+
+	ft->closebutton = menu_start_create_button ("gtk-close", "Close", NULL, NULL);
 	gtk_box_pack_start (GTK_BOX (hbox), ft->closebutton, TRUE, TRUE, 0);
 
 	gtk_box_pack_start (GTK_BOX (ft), hbox, FALSE, FALSE, 0);
@@ -201,41 +168,17 @@ GtkWidget *fs_tab_widget_new ()
 	return ft;
 }
 
-static GtkWidget *create_button (gchar * stock_id, gchar * text,
-				 GCallback callback, gpointer data)
-{
-	GtkWidget *button;
-	GtkWidget *label;
-	GtkWidget *button_hbox;
-	GtkWidget *image;
-
-	button = gtk_button_new ();
-	image = gtk_image_new_from_stock (stock_id,
-					  GTK_ICON_SIZE_LARGE_TOOLBAR);
-	label = gtk_label_new (text);
-	button_hbox = gtk_hbox_new (FALSE, 5);
-	gtk_box_pack_start (GTK_BOX (button_hbox), image, FALSE, FALSE, 0);
-	gtk_box_pack_start (GTK_BOX (button_hbox), label, FALSE, FALSE, 0);
-	gtk_container_add (GTK_CONTAINER (button), button_hbox);
-	gtk_button_set_relief (GTK_BUTTON (button), GTK_RELIEF_NONE);
-	if (callback)
-		g_signal_connect (G_OBJECT (button), "clicked",
-				  G_CALLBACK (callback), data);
-
-	return button;
-}
-
 static GtkTreeModel *create_model (FsTabWidget *ft)
 {
 	GtkListStore *list;
 	GtkTreeIter iter;
 	FILE *file;
-	char line[4096];
 	char fsopt[1024];
 	char name[FILENAME_MAX];
 	char dev[FILENAME_MAX];
 	char fs[32];
 	char opt[128];
+	char line[FILENAME_MAX];
 
 	list = gtk_list_store_new (COLUMNS,
 				   G_TYPE_STRING,
@@ -266,10 +209,6 @@ static GtkTreeModel *create_model (FsTabWidget *ft)
 
 			gtk_list_store_append (list, &iter);
 
-			sprintf (line, "%s\t \n%s", dev, name);
-
-			sprintf (fsopt, "%s\n<i>%s</i>", fs, opt);
-
 			if (strcmp (fs, "iso9660") == 0) {
 				stock_id = "stock_cdrom.png";
 			} else if (strcmp (fs, "cd9660") == 0){
@@ -284,36 +223,18 @@ static GtkTreeModel *create_model (FsTabWidget *ft)
 				stock_id = "stock_harddisk.png";
 			}
 
-			sprintf (line, "\t%s", name);
-			gtk_list_store_set (list, &iter, PATH, line, -1);
-
-			sprintf (line, "%s", dev);
-			gtk_list_store_set (list, &iter, DEV, line, -1);
-
-			sprintf (line, "\t%s", fs);
-			gtk_list_store_set (list, &iter, FSTYPE, line, -1);
-
-			sprintf (line, "\t%s", opt);
-			gtk_list_store_set (list, &iter, OPTIONS, line, -1);
-
-			markup = g_strjoin ("",
-					    "<i><tt>dev:   </tt></i> <b>", dev, "</b>\n",
-					    "<i><tt>dir:   </tt></i> <b>", name, "</b>\n",
-					    "<i><tt>fs:    </tt></i> ", fs, "\n",
-					    "<i><tt>opt:   </tt></i> ", opt, "\n",
-					    "<i><tt>state: </tt></i> ", "<i>not mounted</i>", "\n",
-					    NULL);
-
 			pixbuf = MIME_ICON_create_pixbuf (stock_id);
 			if (!pixbuf) {
 
 			}
 			gtk_list_store_set (list, &iter,
-					    STATE, "\t<i>not mounted</i>",
-					    MARKUP, markup,
+					    PATH, name,
+					    DEV, dev,
+					    FSTYPE, fs,
+					    OPTIONS, opt,
+ 					    MARKUP, " ",
 					    ICON, pixbuf,
 					    -1);
-			g_free (markup);
 		}
 	}
 
@@ -333,7 +254,6 @@ static void update_model (FsTabWidget *ft)
 	GList *mounted = NULL, *tmp = NULL;
 	char *mdev;
 
-/* 	model = gtk_tree_view_get_model (GTK_TREE_VIEW (ft->view)); */
 	model = gtk_icon_view_get_model (GTK_ICON_VIEW (ft->view));
 
 	if (gtk_tree_model_get_iter_first (model, &iter)) {
@@ -368,7 +288,6 @@ static void update_model (FsTabWidget *ft)
 					state = g_strdup ("mounted");
 					gtk_list_store_set
 						(GTK_LIST_STORE (model), &iter,
-/* 						 STATE, "<i>mounted</i>", */
 						 MOUNTED, TRUE,
 						 -1);
 					break;
@@ -392,17 +311,17 @@ static void update_model (FsTabWidget *ft)
 			if (!tmp) {
 				state = g_strdup ("not mounted");
 				gtk_list_store_set (GTK_LIST_STORE (model), &iter,
-/* 						    STATE, "<i>not mounted</i>", */
 						    MOUNTED, FALSE,
 						    -1);
 			}
-			markup = g_strjoin ("",
-					    "<i><tt>dev  :   </tt></i><b>", mdev, "</b>\n",
-					    "<i><tt>dir  :   </tt></i><b>", path + 1, "</b>\n",
-					    "<i><tt>fs   :   </tt></i>", fs + 1, "\n",
-					    "<i><tt>opt  :   </tt></i>", opt + 1, "\n",
-					    "<i><tt>state:   </tt></i><i>", state, "</i>\n",
-					    NULL);
+			markup = g_strjoin
+				("",
+				 "<i><tt>dev  :   </tt></i><b>", mdev, "</b>\n",
+				 "<i><tt>dir  :   </tt></i><b>", path, "</b>\n",
+				 "<i><tt>fs   :   </tt></i>", fs, "\n",
+				 "<i><tt>opt  :   </tt></i>", opt, "\n",
+				 "<i><tt>state:   </tt></i><i>", state, "</i>\n",
+				 NULL);
 			g_free (state);
 
 			gtk_list_store_set (GTK_LIST_STORE (model), &iter,
@@ -417,6 +336,18 @@ static void update_model (FsTabWidget *ft)
 	}
 }
 
+static void reload_fstab (GtkWidget *self, gpointer data)
+{
+	FsTabWidget *ft = (FsTabWidget *) data;
+	GtkTreeModel *model;
+
+	model = gtk_icon_view_get_model (GTK_ICON_VIEW (ft->view));
+	gtk_list_store_clear (GTK_LIST_STORE (model));
+
+	gtk_icon_view_set_model (GTK_ICON_VIEW (ft->view), create_model (ft));
+	update_model (ft);
+}
+
 void fs_tab_widget_update (FsTabWidget *ft)
 {
 	update_model (ft);
@@ -424,75 +355,74 @@ void fs_tab_widget_update (FsTabWidget *ft)
 
 static void mount_button_click (GtkWidget *self, gpointer data)
 {
-/*       	FsTabWidget *ft = (FsTabWidget *) data; */
-/* 	GtkTreeModel *model; */
-/* 	GtkTreeSelection *selection; */
-/* 	GtkTreeIter iter; */
+      	FsTabWidget *ft = (FsTabWidget *) data;
+	GtkTreeModel *model;
+	GList *selected, *tmp;
+	GtkTreeIter iter;
 
-/* /\*  	model = gtk_tree_view_get_model (GTK_TREE_VIEW (ft->view)); *\/ */
-/* 	model = gtk_icon_view_get_model (GTK_ICON_VIEW (ft->view)); */
+	model = gtk_icon_view_get_model (GTK_ICON_VIEW (ft->view));
+	selected = gtk_icon_view_get_selected_items (GTK_ICON_VIEW (ft->view));
 
-/* /\*  	selection = gtk_tree_view_get_selection (GTK_TREE_VIEW (ft->view)); *\/ */
-/* 	selection = gtk_icon_view_get_selection (GTK_ICON_VIEW (ft->view)); */
+	for (tmp = selected; tmp; tmp = tmp->next) {
+		if (gtk_tree_model_get_iter (model, &iter, tmp->data)) {
+			char *dev;
+			gboolean mounted;
+			int fds[2];
+			pid_t pid;
 
-/* 	if (gtk_tree_selection_get_selected (selection, &model, &iter)) { */
-/* 		char *dev; */
-/* 		gboolean mounted; */
-/* 		int fds[2]; */
-/* 		pid_t pid; */
+			g_signal_emit_by_name (ft, "completed");
 
-/* 		g_signal_emit_by_name (ft, "completed"); */
+			gtk_tree_model_get (model, &iter,
+					    DEV, &dev,
+					    MOUNTED, &mounted,
+					    -1);
+			pipe (fds);
+			pid = fork ();
+			if (pid) {/* parent */
+				char message[1024];
+				GtkWidget *dialog;
+				int len = 0;
+				int r = 0;
 
-/* 		gtk_tree_model_get (model, &iter, */
-/* 				    DEV, &dev, */
-/* 				    MOUNTED, &mounted, */
-/* 				    -1); */
-/* 		pipe (fds); */
-/* 		pid = fork (); */
-/* 		if (pid) {/\* parent *\/ */
-/* 			char message[1024]; */
-/* 			GtkWidget *dialog; */
-/* 			int len = 0; */
-/* 			int r = 0; */
+				close (fds[1]);
+				while ((r = read (fds[0], message + len, 1024 - len))) {
+					len = r + len;
+				}
+				message[len] = '\0';
 
-/* 			close (fds[1]); */
-/* 			while ((r = read (fds[0], message + len, 1024 - len))) { */
-/* 				len = r + len; */
-/* 			} */
-/* 			message[len] = '\0'; */
+				if (len > 0) {
+					dialog = gtk_message_dialog_new
+						(NULL, GTK_DIALOG_MODAL,
+						 GTK_MESSAGE_ERROR,
+						 GTK_BUTTONS_CLOSE,
+						 message);
+					gtk_dialog_run (GTK_DIALOG (dialog));
+					gtk_widget_destroy (dialog);
+				}
+			} else {
+				close (fds[0]);
+				dup2 (fds[1], STDERR_FILENO);
+				if (mounted) {
+					execlp ("umount", "umount", dev, NULL);
+				} else {
+					execlp ("mount", "mount", dev, NULL);
+				}
+				exit (1);
+			}	
+		}
+	}
 
-/* 			if (len > 0) { */
-/* 				dialog = gtk_message_dialog_new */
-/* 					(NULL, GTK_DIALOG_MODAL, */
-/* 					 GTK_MESSAGE_ERROR, */
-/* 					 GTK_BUTTONS_CLOSE, */
-/* 					 message); */
-/* 				gtk_dialog_run (GTK_DIALOG (dialog)); */
-/* 				gtk_widget_destroy (dialog); */
-/* 			} */
-/* 		} else { */
-/* 			close (fds[0]); */
-/* 			dup2 (fds[1], STDERR_FILENO); */
-/* 			if (mounted) { */
-/* 				execlp ("umount", "umount", dev, NULL); */
-/* 			} else { */
-/* 				execlp ("mount", "mount", dev, NULL); */
-/* 			} */
-/* 			exit (1); */
-/* 		} */
-/* 	} */
-
-/* 	g_signal_emit_by_name (ft, "completed"); */
+	g_list_foreach (selected, gtk_tree_path_free, NULL);
+	g_list_free (selected);
 }
 
 static void row_activated (GtkIconView *self, GtkTreePath *path,
-			   /* GtkTreeViewColumn *column, */ gpointer data)
+			   gpointer data)
 {
 	FsTabWidget *ft = (FsTabWidget *) data;
 	GtkTreeModel *model;
 	GtkTreeIter iter;
 
-/* 	model = gtk_tree_view_get_model (GTK_TREE_VIEW (ft->view)); */
 	model = gtk_icon_view_get_model (GTK_ICON_VIEW (ft->view));
 
 	g_signal_emit_by_name (ft, "completed");

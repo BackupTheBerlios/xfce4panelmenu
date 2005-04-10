@@ -1155,7 +1155,7 @@ fs_browser_init (FsBrowser * fb)
 	gtk_icon_view_set_pixbuf_column (GTK_ICON_VIEW (fb->view), ICON_COLUMN);
 
 	gtk_icon_view_set_orientation (GTK_ICON_VIEW (fb->view), GTK_ORIENTATION_HORIZONTAL);
-	gtk_icon_view_set_item_width (GTK_ICON_VIEW (fb->view), 300);
+	gtk_icon_view_set_item_width (GTK_ICON_VIEW (fb->view), 180);
 
 	scroll = gtk_scrolled_window_new (NULL, NULL);
 	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll),
@@ -1242,51 +1242,22 @@ static void fs_browser_destroy (GtkObject *object)
 		(* GTK_OBJECT_CLASS (parent_class)->destroy) (object);
 }
 
-static void open_file_from_menu (GtkWidget *self, gpointer data)
+void fs_browser_show (FsBrowser *browser, FsBrowserViewType type)
 {
-	char *path;
-
-	path = g_object_get_data (G_OBJECT (self), "path");
-	open_file (FS_BROWSER (data), path, TRUE);
-}
-
-GtkWidget *fs_browser_get_recent_files_menu (FsBrowser *browser)
-{
-	GtkWidget *menu;
-	GtkWidget *item;
-	GList *list;
-
-	menu = gtk_menu_new ();
-
-	for (list = browser->recent_files; list; list = list->next) {
-		gchar *str = NULL, *desc;
-		GdkPixbuf *pixbuf;
-		GtkWidget *image;
-
-		if (browser->mime_check) {
-			str = MIME_get_type ((char *) list->data, TRUE);
-
+	gtk_widget_show_all (GTK_WIDGET (browser));
+	switch (type) {
+	case RECENTLY_USED:
+		if (browser->active) {
+			gtk_toggle_button_set_active
+				(GTK_TOGGLE_BUTTON (browser->togglerecent), TRUE);
 		}
-		if (str) {
-			desc = g_strjoin ("", (gchar *) list->data,
-					  "\n\t", str, NULL);
-		} else {
-			desc = g_strdup ((gchar *) list->data);
+		break;
+	case FILE_BROWSER:
+		if (!browser->active) {
+			gtk_toggle_button_set_active
+				(GTK_TOGGLE_BUTTON (browser->togglerecent), FALSE);
 		}
-		item = gtk_image_menu_item_new_with_label (desc);
-		g_object_set_data (G_OBJECT (item), "path", list->data);
-		g_signal_connect (G_OBJECT (item), "activate",
-				  G_CALLBACK (open_file_from_menu), browser);
-		pixbuf = get_mime_icon (str);
-		image = gtk_image_new_from_pixbuf (pixbuf);
-		gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (item), image);
-		gtk_widget_show (item);
-		gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
-		g_free (desc);
+		fs_browser_read_dir (browser);
+		break;
 	}
-
-	gtk_widget_show_all (menu);
-
-	return menu;
 }
-

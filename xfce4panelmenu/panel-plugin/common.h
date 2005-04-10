@@ -26,4 +26,7 @@ char *ms_get_read_file (const char *name);
 xfmime_icon_functions *load_mime_icon_module ();
 xfmime_functions *load_mime_module ();
 
+GtkWidget *menu_start_create_button (gchar *stock_id, gchar *text,
+				     GCallback callback, gpointer data);
+
 #endif /* _COMMON_H */

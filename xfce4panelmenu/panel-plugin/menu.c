@@ -25,6 +25,7 @@
 #include <libxml/tree.h>
 
 #include <libxfce4util/i18n.h>
+#include <libxfce4util/libxfce4util.h>
 #include <libxfcegui4/libxfcegui4.h>
 
 #include "menu.h"
@@ -81,6 +82,82 @@ static GtkHBoxClass *parent_class = NULL;
 
 static guint fs_browser_signals[LAST_SIGNAL] = { 0 };
 
+/******************************************************************************************/
+
+typedef enum {
+	TOPLEVEL,
+	MENU,
+	MENUITEM
+} DesktopEntryType;
+
+struct DesktopEntry {
+	GtkWidget *widget;
+	DesktopEntryType type;
+	XfceDesktopEntry *entry;
+	GHashTable *child;
+};
+
+static char *desk_paths[] = {"/usr/share/applications/", "/usr/local/share/applications/"};
+
+static char *cats[] = {
+	"Categories",
+	"Icon",
+	"Exec",
+	"Name",
+	"GenericName",
+	"Comment",
+	"OnlyShowIn"
+};
+static int cat_num = 7;
+
+
+
+GHashTable *create_menu_image ()
+{
+
+}
+
+GtkWidget *create_menu_from_image (GHashTable *image, gchar *key)
+{
+	GtkWidget *menu;
+
+	return menu;
+}
+
+void test ()
+{
+	XfceDesktopEntry *entry;
+	gchar *value;
+
+	printf ("\ntest output\n");
+
+	entry = xfce_desktop_entry_new ("/usr/share/applications/gqview.desktop", cats, cat_num);
+	if (entry) {
+		if (xfce_desktop_entry_get_string (entry, "Categories", FALSE, &value)) {
+			printf ("Categories=%s\n", value);
+		}
+		if (xfce_desktop_entry_get_string (entry, "Icon", FALSE, &value)) {
+			printf ("Icon=%s\n", value);
+		}
+		if (xfce_desktop_entry_get_string (entry, "Exec", FALSE, &value)) {
+			printf ("Exec=%s\n", value);
+		}
+		if (xfce_desktop_entry_get_string (entry, "Name", FALSE, &value)) {
+			printf ("Name=%s\n", value);
+		}
+		if (xfce_desktop_entry_get_string (entry, "GenericName", TRUE, &value)) {
+			printf ("GenericName=%s\n", value);
+		}
+		if (xfce_desktop_entry_get_string (entry, "Comment", TRUE, &value)) {
+			printf ("Comment=%s\n", value);
+		}
+	} else {
+		printf ("something wrong\n");
+	}
+	printf ("\ntest output end\n");
+}
+
+/******************************************************************************************/
 
 int rec_apps_cmp (gconstpointer a, gconstpointer b)
 {
@@ -497,6 +574,66 @@ button_press_g (GtkWidget * self, gpointer data)
 	g_signal_emit_by_name (menu, "completed");
 }
 
+static void private_cb_eventbox_style (GtkWidget * widget, GtkStyle * old_style)
+{
+	static gboolean recursive = 0;
+	GtkStyle *style;
+
+	if (recursive > 0)
+		return;
+
+	++recursive;
+	style = gtk_widget_get_style (widget);
+	gtk_widget_modify_bg (widget, GTK_STATE_NORMAL,
+			      &style->bg[GTK_STATE_SELECTED]);
+	--recursive;
+}
+
+static void private_cb_label_style_set (GtkWidget * widget, GtkStyle * old_style)
+{
+	static gboolean recursive = 0;
+	GtkStyle *style;
+
+	if (recursive > 0)
+		return;
+
+	++recursive;
+	style = gtk_widget_get_style (widget);
+	gtk_widget_modify_fg (widget, GTK_STATE_NORMAL,
+			      &style->fg[GTK_STATE_SELECTED]);
+	--recursive;
+}
+
+GtkWidget *create_menu_header (gchar *title)
+{
+	GtkLabel *label;
+	GtkStyle *style, *labelstyle;
+	GtkWidget *box;
+
+	box = gtk_event_box_new ();
+
+	label = gtk_label_new (title);
+
+	style = gtk_widget_get_style (box);
+	labelstyle = gtk_widget_get_style (label);
+
+	gtk_widget_modify_bg (GTK_WIDGET (box), GTK_STATE_NORMAL,
+			      &style->bg[GTK_STATE_SELECTED]);
+	gtk_widget_modify_fg (GTK_WIDGET (label), GTK_STATE_NORMAL,
+			      &style->fg[GTK_STATE_SELECTED]);
+
+	g_signal_connect_after (G_OBJECT (label), "style_set",
+				G_CALLBACK (private_cb_label_style_set),
+				NULL);
+	g_signal_connect_after (G_OBJECT (box), "style_set",
+				G_CALLBACK (private_cb_eventbox_style),
+				NULL);
+
+	gtk_container_add (GTK_CONTAINER (box), label);
+
+	return box;
+}
+
 static GtkWidget *
 menu_start_create_button_image (GtkWidget *image, gchar * text,
 				GCallback callback, gpointer data)
@@ -552,9 +689,8 @@ menu_start_create_button_name (char *icon, gchar * text,
 	return menu_start_create_button_image (image, text, callback, data);
 }
 
-static GtkWidget *
-menu_start_create_button (gchar * stock_id, gchar * text,
-			  GCallback callback, gpointer data)
+GtkWidget *menu_start_create_button (gchar * stock_id, gchar * text,
+				     GCallback callback, gpointer data)
 {
 	GtkWidget *button;
 	GtkWidget *label;
@@ -696,7 +832,7 @@ menu_init (Menu * menu)
 	menu->term_app = g_strdup ("xfterm4");
 
 	gtk_box_set_homogeneous (GTK_BOX (menu), TRUE);
-	gtk_box_set_spacing (GTK_BOX (menu), 0);
+	gtk_box_set_spacing (GTK_BOX (menu), 1);
 }
 
 static void run_user_action (GtkWidget *self, gpointer data)
@@ -735,11 +871,13 @@ static void repack_user_buttons (Menu *menu, gboolean destroy)
 	for (i = 0; i < COLUMNS_COUNT; i++) {
 		tmp = gtk_container_get_children (GTK_CONTAINER (menu->column_boxes[i]));
 		for (tmp2 = tmp; tmp2; tmp2 = tmp2->next) {
-			if (!destroy) {
-				g_object_ref (G_OBJECT (tmp2->data));
+			if (g_object_get_data (tmp2->data, "user_action")) {
+				if (!destroy) {
+					g_object_ref (G_OBJECT (tmp2->data));
+				}
+				gtk_container_remove (GTK_CONTAINER (menu->column_boxes[i]),
+						      GTK_WIDGET (tmp2->data));
 			}
-			gtk_container_remove (GTK_CONTAINER (menu->column_boxes[i]),
-					      GTK_WIDGET (tmp2->data));
 		}
 		old_list = g_list_concat (old_list, tmp);
 	}
@@ -839,6 +977,8 @@ GtkWidget *menu_new ()
 	GList *ra;
 	GtkTooltips *tooltips;
 	GtkStyle *style;
+	GtkWidget *separator;
+	GtkWidget *header;
 	int i = 0;
 
 	menu = MENU (g_object_new (menu_get_type (), NULL));
@@ -932,12 +1072,18 @@ GtkWidget *menu_new ()
 
 	menu->lbox = gtk_vbox_new (FALSE, 0);
 
+	menu->app_header = create_menu_header ("Most often used apps");
+	gtk_box_pack_start (GTK_BOX (menu->lbox), menu->app_header, FALSE, TRUE, 0);
+
 	repack_rec_apps_buttons (menu);
 
 	button = create_arrow_button ("gtk-index", "Applications");
 	g_signal_connect (G_OBJECT (button), "clicked",
 			  G_CALLBACK (show_menu), menu);
 	gtk_box_pack_end (GTK_BOX (menu->lbox), button, FALSE, FALSE, 0);
+
+	separator = gtk_hseparator_new ();
+	gtk_box_pack_end (GTK_BOX (menu->lbox), separator, FALSE, FALSE, 1);
 
 	menu->lebox = gtk_event_box_new ();
 	gtk_container_add (GTK_CONTAINER (menu->lebox), menu->lbox);
@@ -949,6 +1095,10 @@ GtkWidget *menu_new ()
 	 */
 
 	menu->rbox = gtk_vbox_new (FALSE, 0);
+
+	header = create_menu_header ("User shortcuts");
+	gtk_box_pack_start (GTK_BOX (menu->rbox),
+			    header, FALSE, FALSE, 0);
 
 	menu->rebox = gtk_event_box_new ();
 	gtk_container_add (GTK_CONTAINER (menu->rebox), menu->rbox);
@@ -963,39 +1113,47 @@ GtkWidget *menu_new ()
 	gtk_box_pack_end (GTK_BOX (menu->rbox),
 			  menu->fsbrowserbutton, FALSE, FALSE, 0);
 
-	menu->recentfilesbutton = create_arrow_button ("gtk-index", "Recent Files");
+	menu->recentfilesbutton = menu_start_create_button
+		("gtk-index", "Recent Files", NULL, NULL);
 	gtk_box_pack_end (GTK_BOX (menu->rbox), menu->recentfilesbutton, FALSE, FALSE, 0);
 
-	button = menu_start_create_button ("gtk-preferences", "Settings...",
-					   NULL, NULL);
-	g_signal_connect (G_OBJECT (button), "clicked",
-			  G_CALLBACK (set_button_press), menu);
-	gtk_box_pack_end (GTK_BOX (menu->rbox), button, FALSE, FALSE, 0);
+/* 	button = menu_start_create_button ("gtk-preferences", "Settings...", */
+/* 					   NULL, NULL); */
+/* 	g_signal_connect (G_OBJECT (button), "clicked", */
+/* 			  G_CALLBACK (set_button_press), menu); */
+/* 	gtk_box_pack_end (GTK_BOX (menu->rbox), button, FALSE, FALSE, 0); */
 
-	button = menu_start_create_button
-		("gtk-network", "Terminal",
-		 G_CALLBACK (menu_term_app),
-		 menu);
-	gtk_box_pack_end (GTK_BOX (menu->rbox), button, FALSE, FALSE, 0);
+/* 	button = menu_start_create_button */
+/* 		("gtk-network", "Terminal", */
+/* 		 G_CALLBACK (menu_term_app), */
+/* 		 menu); */
+/* 	gtk_box_pack_end (GTK_BOX (menu->rbox), button, FALSE, FALSE, 0); */
 
-	button = menu_start_create_button
-		("gtk-execute", "Run ...",
-		 G_CALLBACK (menu_run_app),
-		 menu);
-	gtk_box_pack_end (GTK_BOX (menu->rbox), button, FALSE, FALSE, 0);
+/* 	button = menu_start_create_button */
+/* 		("gtk-execute", "Run ...", */
+/* 		 G_CALLBACK (menu_run_app), */
+/* 		 menu); */
+/* 	gtk_box_pack_end (GTK_BOX (menu->rbox), button, FALSE, FALSE, 0); */
 
-	button = gtk_hseparator_new ();
-	gtk_box_pack_end (GTK_BOX (menu->rbox), button, FALSE, FALSE, 0);
+/* 	button = gtk_hseparator_new (); */
+	header = create_menu_header ("Extensions");
+	gtk_box_pack_end (GTK_BOX (menu->rbox), header, FALSE, TRUE, 0);
 
 	gtk_box_pack_start (GTK_BOX (menu), menu->rebox, TRUE, TRUE, 0);
 
 	for (i = 0; i < COLUMNS_COUNT; i++) {
 		menu->column_boxes[i] = gtk_vbox_new (FALSE, 0);
+
+		header = create_menu_header ("User shortcuts");
+		gtk_box_pack_start (GTK_BOX (menu->column_boxes[i]), header,
+				    FALSE, TRUE, 0);
+
 		menu->column_eboxes[i] = gtk_event_box_new ();
 		gtk_container_add (GTK_CONTAINER (menu->column_eboxes[i]),
 				   menu->column_boxes[i]);
 		gtk_box_pack_start (GTK_BOX (menu), menu->column_eboxes[i],
 				    TRUE, TRUE, 0);
+		
 	}
 
 	return GTK_WIDGET (menu);
@@ -1145,4 +1303,6 @@ static void show_menu (GtkWidget * self, gpointer data)
 	gtk_menu_popup (GTK_MENU (menu->menu), NULL, NULL,
 			(GtkMenuPositionFunc) position_menu,
 			self, 0, time);
+
+	test ();
 }

@@ -19,6 +19,31 @@
 
 #include <gtk/gtk.h>
 
+/*******************************************************************************/
+
+#define SYSTEM_MENU_TYPE            (system_menu_get_type ())
+#define SYSTEM_MENU(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj),\
+                            MENU_TYPE, SystemMenu))
+#define SYSTEM_MENU_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),\
+                            MENU_TYPE, SystemMenuClass))
+#define IS_SYSTEM_MENU(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj),\
+                            SYSTEM_MENU_TYPE))
+#define IS_SYSTEM_MENU_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),\
+                            SYSTEM_MENU_TYPE))
+
+typedef struct SystemMenuClass {
+
+};
+
+typedef struct SystemMenu {
+
+};
+
+GType system_menu_get_type ();
+GtkWidget *system_menu_new ();
+
+/*******************************************************************************/
+
 #define MENU_TYPE            (menu_get_type ())
 #define MENU(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj),\
                             MENU_TYPE, Menu))
@@ -29,7 +54,7 @@
 #define IS_MENU_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),\
                             MENU_TYPE))
 
-#define COLUMNS_COUNT 10
+#define COLUMNS_COUNT 4
 
 struct MenuStart;
 
@@ -68,6 +93,8 @@ typedef struct Menu {
 
 	GtkWidget *lbox;
 	GtkWidget *lebox;
+
+	GtkWidget *app_header;
 
 	GtkWidget *recentfilesbutton;
 	GtkWidget *fsbrowserbutton;

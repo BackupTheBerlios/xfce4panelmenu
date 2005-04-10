@@ -30,6 +30,10 @@
 #define IS_FS_BROWSER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),\
                         FS_BROWSER_TYPE))
 
+typedef enum {
+	FILE_BROWSER,
+	RECENTLY_USED
+} FsBrowserViewType;
 
 typedef struct _FsBrowserClass {
 	GtkVBoxClass parent_class;
@@ -61,7 +65,7 @@ typedef struct _FsBrowser {
 
 GType fs_browser_get_type ();
 GtkWidget *fs_browser_new ();
-GtkWidget *fs_browser_get_recent_files_menu (FsBrowser *browser);
 int fs_browser_read_dir (FsBrowser *browser);
+void fs_browser_show (FsBrowser *browser, FsBrowserViewType type);
 
 #endif /* _FSBROWSER_H */

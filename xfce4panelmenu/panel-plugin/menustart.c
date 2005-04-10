@@ -36,13 +36,7 @@ static gboolean button_press          (GtkWidget * widget, GdkEventButton * even
 
 static void menu_start_destroy (GtkObject *object);
 
-/* From xfce sources */
-static void     private_cb_eventbox_style_set (GtkWidget *widget, GtkStyle *old_style);
-
 static void     button_style_cb               (GtkWidget *widget, GtkStyle *old_style);
-
-/* From xfce sources */
-static void     private_cb_label_style_set    (GtkWidget *widget, GtkStyle *old_style);
 
 static GtkWindowClass *parent_class = NULL;
 
@@ -71,6 +65,21 @@ static void private_cb_eventbox_style_set (GtkWidget * widget, GtkStyle * old_st
 	--recursive;
 }
 
+static void private_cb_label_style_set (GtkWidget * widget, GtkStyle * old_style)
+{
+	static gboolean recursive = 0;
+	GtkStyle *style;
+
+	if (recursive > 0)
+		return;
+
+	++recursive;
+	style = gtk_widget_get_style (widget);
+	gtk_widget_modify_fg (widget, GTK_STATE_NORMAL,
+			      &style->fg[GTK_STATE_SELECTED]);
+	--recursive;
+}
+
 static void button_style_cb (GtkWidget * widget, GtkStyle * old_style)
 {
 	static gboolean recursive = 0;
@@ -88,83 +97,59 @@ static void button_style_cb (GtkWidget * widget, GtkStyle * old_style)
 	--recursive;
 }
 
-static void private_cb_label_style_set (GtkWidget * widget, GtkStyle * old_style)
+static GtkWidget *create_ms_header (MenuStart *ms)
 {
-	static gboolean recursive = 0;
-	GtkStyle *style;
+	GtkWidget *box;
+	GtkStyle *style, *labelstyle;
+	GtkWidget *hbox;
 
-	if (recursive > 0)
-		return;
+	ms->title = gtk_label_new (NULL);
+	gtk_label_set_use_markup (GTK_LABEL (ms->title), TRUE);
+	gtk_label_set_markup (GTK_LABEL (ms->title), "<big><b>Menu</b></big>");
+	ms->menu_image = gtk_image_new_from_stock
+		("gtk-index", GTK_ICON_SIZE_LARGE_TOOLBAR);
 
-	++recursive;
-	style = gtk_widget_get_style (widget);
-	gtk_widget_modify_fg (widget, GTK_STATE_NORMAL,
+	box = gtk_event_box_new ();
+
+	style = gtk_widget_get_style (box);
+	labelstyle = gtk_widget_get_style (ms->title);
+
+	gtk_widget_modify_bg (GTK_WIDGET (box), GTK_STATE_NORMAL,
+			      &style->bg[GTK_STATE_SELECTED]);
+	gtk_widget_modify_fg (GTK_WIDGET (ms->title), GTK_STATE_NORMAL,
 			      &style->fg[GTK_STATE_SELECTED]);
-	--recursive;
+
+	hbox = gtk_hbox_new (FALSE, 10);
+	gtk_container_set_border_width (GTK_CONTAINER (hbox), 10);
+
+	gtk_box_pack_start (GTK_BOX (hbox), ms->menu_image, FALSE, FALSE, 1);
+	gtk_box_pack_start (GTK_BOX (hbox), ms->title, FALSE, FALSE, 1);
+
+	gtk_container_add (GTK_CONTAINER (box), hbox);
+
+	g_signal_connect_after (G_OBJECT (ms->title), "style_set",
+				G_CALLBACK (private_cb_label_style_set),
+				NULL);
+	g_signal_connect_after (G_OBJECT (box), "style_set",
+				G_CALLBACK (private_cb_eventbox_style_set),
+				NULL);
+
+	gtk_widget_show_all (box);
+
+	return box;
 }
 
-static void
-position_menu (GtkMenu * menu, gint * x, gint * y,
-	       gboolean push_in, gpointer data)
+static void update_ms_header (MenuStart *menu, gchar *title, gchar *stock_id)
 {
-	GtkWidget *button = (GtkWidget *) data;
-	GtkWidget *parent;
-	int pos_x = 0, pos_y = 0, tmp = 0;
-	GtkRequisition req;
-	GtkAllocation alloc;
-	int sh;
-	GdkScreen *screen;
+	gchar *markup;
 
-	screen = gdk_screen_get_default ();
-	sh = gdk_screen_get_height (screen);
+	markup = g_strjoin (NULL, "<big><b>", title, "</b></big>", NULL);
 
-	gtk_widget_size_request (GTK_WIDGET (menu), &req);
+	gtk_label_set_markup (GTK_LABEL (menu->title), markup);
+	gtk_image_set_from_stock (GTK_IMAGE (menu->menu_image), stock_id,
+				  GTK_ICON_SIZE_LARGE_TOOLBAR);
 
-	alloc = button->allocation;
-
-	*x = button->allocation.x + button->allocation.width - 4;
-	parent = button;
-	while (parent) {
-		if (!GTK_WIDGET_NO_WINDOW (parent)) {
-			gdk_window_get_position (parent->window, &pos_x,
-						 &tmp);
-			*x += pos_x;
-			pos_y += tmp;
-		}
-		parent = parent->parent;
-	}
-	if ((pos_y + button->allocation.y + button->allocation.height / 2) >
-	    sh / 2) {
-		*y = MAX (0,
-			  pos_y + button->allocation.y +
-			  button->allocation.height - req.height);
-	} else {
-		*y = MAX (0, pos_y + button->allocation.y);
-	}
-}
-
-static void menu_deactivated (GtkWidget * self, gpointer data)
-{
-	Menu *menu = (Menu *) data;
-	g_signal_emit_by_name (menu, "getgrab");
-}
-
-static void show_recent_files_menu (GtkWidget *self, gpointer data)
-{
-	guint32 time;
-	GtkWidget *menu;
-	MenuStart *menustart = (MenuStart *) data;
-
-	menu = fs_browser_get_recent_files_menu (FS_BROWSER (menustart->fsbrowser));
-
-	g_signal_connect
-		(G_OBJECT (menu), "deactivate",
-		 G_CALLBACK (menu_deactivated), menustart->menu);
-
-	time = gtk_get_current_event_time ();
-	gtk_menu_popup (GTK_MENU (menu), NULL, NULL,
-			(GtkMenuPositionFunc) position_menu,
-			self, 0, time);
+	g_free (markup);
 }
 
 static void show_fstab_widget (GtkWidget *self, gpointer data)
@@ -173,6 +158,8 @@ static void show_fstab_widget (GtkWidget *self, gpointer data)
 
 	fs_tab_widget_update (FS_TAB_WIDGET (menu->fstab));
 
+	update_ms_header (menu, "Mounter", "gtk-harddisk");
+
 	gtk_widget_hide (menu->menu);
 	gtk_widget_show_all (menu->fstab);
 }
@@ -180,6 +167,8 @@ static void show_fstab_widget (GtkWidget *self, gpointer data)
 static void hide_fstab_widget (GtkWidget *self, gpointer data)
 {
 	MenuStart *menu = (MenuStart *) data;
+
+	update_ms_header (menu, "Menu", "gtk-index");
 
 	gtk_widget_hide (menu->fstab);
 	show_menu_widget (menu->menu);
@@ -190,17 +179,30 @@ static void show_fsbrowser_widget (GtkWidget *self, gpointer data)
 {
 	MenuStart *menu = (MenuStart *) data;
 
+	update_ms_header (menu, "File Browser", "gtk-open");
+
 	gtk_widget_hide (menu->menu);
-	gtk_widget_show_all (menu->fsbrowser);
-	fs_browser_read_dir (FS_BROWSER (menu->fsbrowser));
+	fs_browser_show (FS_BROWSER (menu->fsbrowser), FILE_BROWSER);
 }
 
 static void hide_fsbrowser_widget (GtkWidget *self, gpointer data)
 {
 	MenuStart *menu = (MenuStart *) data;
 
+	update_ms_header (menu, "Menu", "gtk-index");
+
 	gtk_widget_hide (menu->fsbrowser);
 	show_menu_widget (menu->menu);
+}
+
+static void show_fsbrowser_widget_with_rf (GtkWidget *self, gpointer data)
+{
+	MenuStart *menu = (MenuStart *) data;
+
+	update_ms_header (menu, "File Browser", "gtk-open");
+
+	gtk_widget_hide (menu->menu);
+	fs_browser_show (FS_BROWSER (menu->fsbrowser), RECENTLY_USED);
 }
 
 GType menu_start_get_type ()
@@ -331,7 +333,7 @@ static void menu_start_init (MenuStart *ms)
 	ms->frame = gtk_frame_new (NULL);
 	gtk_frame_set_shadow_type (GTK_FRAME (ms->frame), GTK_SHADOW_OUT);
 
-	ms->vbox = gtk_vbox_new (FALSE, 0);
+	ms->vbox = gtk_vbox_new (FALSE, 1);
 
 	gtk_container_set_border_width (GTK_CONTAINER (ms->vbox), 0);
 
@@ -344,7 +346,8 @@ static void menu_start_init (MenuStart *ms)
 	g_free (logo_path);
 
 	text = g_strdup_printf (_("Xfce4 Panel Menu"));
-	ms->header = create_header (logo, text);
+	//	ms->header = create_header (logo, text);
+	ms->header = create_ms_header (ms);
 	gtk_box_pack_start (GTK_BOX (ms->vbox), ms->header, FALSE, FALSE, 0);
 	g_object_unref (logo);
 	g_free (text);
@@ -365,7 +368,7 @@ static void menu_start_init (MenuStart *ms)
 
 	ms->menu = menu_new ();
 	g_signal_connect (G_OBJECT (MENU (ms->menu)->recentfilesbutton),
-			  "clicked", G_CALLBACK (show_recent_files_menu), ms);
+			  "clicked", G_CALLBACK (show_fsbrowser_widget_with_rf), ms);
 	g_signal_connect (G_OBJECT (MENU (ms->menu)->fstabbutton),
 			  "clicked", G_CALLBACK (show_fstab_widget), ms);
 	g_signal_connect (G_OBJECT (MENU (ms->menu)->fsbrowserbutton),
@@ -507,6 +510,8 @@ void menu_start_show (MenuStart * ms, int xpos, int ypos, MenuStartPosition pos)
 
 	gtk_widget_show (ms->header);
 	gtk_widget_show_all (ms->footbox);
+	//gtk_widget_hide (ms->header);
+	//gtk_widget_hide (ms->footbox);
 
 	gtk_widget_hide (ms->fsbrowser);
 	gtk_widget_hide (ms->fstab);
