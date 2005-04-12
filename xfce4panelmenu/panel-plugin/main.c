@@ -126,6 +126,9 @@ struct menu_start
 
 	GtkWidget *mime_check;
 
+	GtkWidget *show_header;
+	GtkWidget *show_footer;
+
 	GtkWidget *mime_builtin;
 	GtkWidget *mime_outside;
 	GtkWidget *mime_entry;
@@ -311,7 +314,8 @@ GtkWidget *init_browser_page (Control *ctrl)
 	vbox = gtk_vbox_new (FALSE, 1);
 
 	gtk_container_set_border_width (GTK_CONTAINER (vbox), 5);
-
+	//gtk_widget_hide (ms->header);
+	//gtk_widget_hide (ms->footbox);
 	table = gtk_table_new (6, 3, TRUE);
 
 	ms->mime_check = gtk_check_button_new_with_label
@@ -417,25 +421,37 @@ GtkWidget *init_general_page (Control *ctrl)
 	gtk_table_attach (GTK_TABLE (table), ms->set_entry, 1, 3, 3, 4,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
 
-	label = gtk_label_new ("Run Command");
-	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
-	gtk_table_attach (GTK_TABLE (table), label, 0, 1, 4, 5,
-			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
-	ms->run_entry = gtk_entry_new ();
-	gtk_entry_set_text (GTK_ENTRY (ms->run_entry),
-			    MENU (menu)->run_app);
-	gtk_table_attach (GTK_TABLE (table), ms->run_entry, 1, 3, 4, 5,
+	ms->show_header = gtk_check_button_new_with_label ("Show Header");
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (ms->show_header),
+				      MENU_START (((struct menu_start *) ctrl->data)->menustart)->show_header);
+	gtk_table_attach (GTK_TABLE (table), ms->show_header, 0, 3, 4, 5,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
 
-	label = gtk_label_new ("Term Command");
-	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
-	gtk_table_attach (GTK_TABLE (table), label, 0, 1, 5, 6,
+/* 	label = gtk_label_new ("Run Command"); */
+/* 	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5); */
+/* 	gtk_table_attach (GTK_TABLE (table), label, 0, 1, 4, 5, */
+/* 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1); */
+/* 	ms->run_entry = gtk_entry_new (); */
+/* 	gtk_entry_set_text (GTK_ENTRY (ms->run_entry), */
+/* 			    MENU (menu)->run_app); */
+/* 	gtk_table_attach (GTK_TABLE (table), ms->run_entry, 1, 3, 4, 5, */
+/* 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1); */
+
+	ms->show_footer = gtk_check_button_new_with_label ("Show Footer");
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (ms->show_footer),
+				      MENU_START (((struct menu_start *) ctrl->data)->menustart)->show_footer);
+	gtk_table_attach (GTK_TABLE (table), ms->show_footer, 0, 3, 5, 6,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
-	ms->term_entry = gtk_entry_new ();
-	gtk_entry_set_text (GTK_ENTRY (ms->term_entry),
-			    MENU (menu)->term_app);
-	gtk_table_attach (GTK_TABLE (table), ms->term_entry, 1, 3, 5, 6,
-			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
+
+/* 	label = gtk_label_new ("Term Command"); */
+/* 	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5); */
+/* 	gtk_table_attach (GTK_TABLE (table), label, 0, 1, 5, 6, */
+/* 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1); */
+/* 	ms->term_entry = gtk_entry_new (); */
+/* 	gtk_entry_set_text (GTK_ENTRY (ms->term_entry), */
+/* 			    MENU (menu)->term_app); */
+/* 	gtk_table_attach (GTK_TABLE (table), ms->term_entry, 1, 3, 5, 6, */
+/* 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1); */
 
 	gtk_box_pack_start (GTK_BOX (vbox), table, FALSE, TRUE, 3);
 
@@ -538,6 +554,12 @@ apply_options (gpointer data)
 	check = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (ms->mime_check));
 	browser->mime_check = check;
 
+	check = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (ms->show_header));
+	MENU_START (ms->menustart)->show_header = check;
+
+	check = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (ms->show_footer));
+	MENU_START (ms->menustart)->show_footer = check;
+
 	value = gtk_spin_button_get_value (GTK_SPIN_BUTTON (ms->columns_spin));
 	menu->columns = value;
 
@@ -567,15 +589,15 @@ apply_options (gpointer data)
 		free (menu->set_app);
 	menu->set_app = app;
 
-	app = g_strdup (gtk_entry_get_text (GTK_ENTRY (ms->run_entry)));
-	if (menu->run_app)
-		free (menu->run_app);
-	menu->run_app = app;
+/* 	app = g_strdup (gtk_entry_get_text (GTK_ENTRY (ms->run_entry))); */
+/* 	if (menu->run_app) */
+/* 		free (menu->run_app); */
+/* 	menu->run_app = app; */
 
-	app = g_strdup (gtk_entry_get_text (GTK_ENTRY (ms->term_entry)));
-	if (menu->term_app)
-		free (menu->term_app);
-	menu->term_app = app;
+/* 	app = g_strdup (gtk_entry_get_text (GTK_ENTRY (ms->term_entry))); */
+/* 	if (menu->term_app) */
+/* 		free (menu->term_app); */
+/* 	menu->term_app = app; */
 }
 
 static void
@@ -668,19 +690,35 @@ read_conf (Control *control, xmlNodePtr node)
 		menu->set_app = value;
 	}
 
-	value = xmlGetProp(node, (const xmlChar *) "run_app");
+	value = xmlGetProp(node, (const xmlChar *) "show_header");
 	if (value) {
-		if (menu->run_app)
-			free (menu->run_app);
-		menu->run_app = value;
+		int v = atoi (value);
+		MENU_START (ms->menustart)->show_header = v;
+	} else {
+		MENU_START (ms->menustart)->show_header = TRUE;
 	}
 
-	value = xmlGetProp(node, (const xmlChar *) "term_app");
+	value = xmlGetProp(node, (const xmlChar *) "show_footer");
 	if (value) {
-		if (menu->term_app)
-			free (menu->term_app);
-		menu->term_app = value;
+		int v = atoi (value);
+		MENU_START (ms->menustart)->show_footer = v;
+	} else {
+		MENU_START (ms->menustart)->show_footer = TRUE;
 	}
+
+/* 	value = xmlGetProp(node, (const xmlChar *) "run_app"); */
+/* 	if (value) { */
+/* 		if (menu->run_app) */
+/* 			free (menu->run_app); */
+/* 		menu->run_app = value; */
+/* 	} */
+
+/* 	value = xmlGetProp(node, (const xmlChar *) "term_app"); */
+/* 	if (value) { */
+/* 		if (menu->term_app) */
+/* 			free (menu->term_app); */
+/* 		menu->term_app = value; */
+/* 	} */
 
 	value = xmlGetProp(node, (const xmlChar *) "width");
 	if (value) {
@@ -724,6 +762,12 @@ write_conf (Control *control, xmlNodePtr node)
 
 	sprintf (count, "%d", menu->user_apps_count);
 	xmlSetProp(node, (const xmlChar *) "user_app_count", count);
+
+	sprintf (count, "%d", MENU_START (ms->menustart)->show_header);
+	xmlSetProp(node, (const xmlChar *) "show_header", count);
+
+	sprintf (count, "%d", MENU_START (ms->menustart)->show_footer);
+	xmlSetProp(node, (const xmlChar *) "show_footer", count);
 
 	sprintf (count, "%d", MENU_START (ms->menustart)->width);
 	xmlSetProp(node, (const xmlChar *) "width", count);

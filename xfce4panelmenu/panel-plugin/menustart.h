@@ -43,6 +43,12 @@ typedef struct MenuStart {
 
 	gboolean menu_is_shown;
 
+	GtkWidget *small_header;
+	GtkWidget *small_footer;
+
+	gboolean show_header;
+	gboolean show_footer;
+
 	GtkWidget *title;
 	GtkWidget *menu_image;
 

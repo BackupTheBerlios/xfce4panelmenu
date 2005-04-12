@@ -161,6 +161,11 @@ static void show_fstab_widget (GtkWidget *self, gpointer data)
 	update_ms_header (menu, "Mounter", "gtk-harddisk");
 
 	gtk_widget_hide (menu->menu);
+
+	if (!menu->show_header) {
+		gtk_widget_show_all (menu->small_header);
+	}
+
 	gtk_widget_show_all (menu->fstab);
 }
 
@@ -171,6 +176,11 @@ static void hide_fstab_widget (GtkWidget *self, gpointer data)
 	update_ms_header (menu, "Menu", "gtk-index");
 
 	gtk_widget_hide (menu->fstab);
+
+	if (!menu->show_header) {
+		gtk_widget_hide (menu->small_header);
+	}
+
 	show_menu_widget (menu->menu);
 }
 
@@ -182,6 +192,11 @@ static void show_fsbrowser_widget (GtkWidget *self, gpointer data)
 	update_ms_header (menu, "File Browser", "gtk-open");
 
 	gtk_widget_hide (menu->menu);
+
+	if (!menu->show_header) {
+		gtk_widget_show_all (menu->small_header);
+	}
+
 	fs_browser_show (FS_BROWSER (menu->fsbrowser), FILE_BROWSER);
 }
 
@@ -192,6 +207,11 @@ static void hide_fsbrowser_widget (GtkWidget *self, gpointer data)
 	update_ms_header (menu, "Menu", "gtk-index");
 
 	gtk_widget_hide (menu->fsbrowser);
+
+	if (!menu->show_header) {
+		gtk_widget_hide (menu->small_header);
+	}
+
 	show_menu_widget (menu->menu);
 }
 
@@ -202,6 +222,11 @@ static void show_fsbrowser_widget_with_rf (GtkWidget *self, gpointer data)
 	update_ms_header (menu, "File Browser", "gtk-open");
 
 	gtk_widget_hide (menu->menu);
+
+	if (!menu->show_header) {
+		gtk_widget_show_all (menu->small_header);
+	}
+
 	fs_browser_show (FS_BROWSER (menu->fsbrowser), RECENTLY_USED);
 }
 
@@ -328,6 +353,9 @@ static void menu_start_init (MenuStart *ms)
 	ms->width = 400;
 	ms->height = 480;
 
+	ms->show_header = TRUE;
+	ms->show_footer = TRUE;
+
 	gtk_window_set_resizable (GTK_WINDOW (ms), FALSE);
 
 	ms->frame = gtk_frame_new (NULL);
@@ -344,6 +372,10 @@ static void menu_start_init (MenuStart *ms)
 
 	logo = gdk_pixbuf_new_from_file (logo_path, NULL);
 	g_free (logo_path);
+
+	ms->small_header = create_menu_header ("Xfce4 Panel Menu");
+	gtk_box_pack_start (GTK_BOX (ms->vbox), ms->small_header, FALSE, TRUE, 0);
+	gtk_widget_hide (ms->small_header);
 
 	text = g_strdup_printf (_("Xfce4 Panel Menu"));
 	//	ms->header = create_header (logo, text);
@@ -408,6 +440,10 @@ static void menu_start_init (MenuStart *ms)
 
 	gtk_widget_show (ms->header);
 	gtk_widget_show_all (ms->footbox);
+
+	ms->small_footer = create_menu_header ("Xfce4 Panel Menu");
+	gtk_box_pack_start (GTK_BOX (ms->vbox), ms->small_footer, FALSE, TRUE, 0);
+	gtk_widget_hide (ms->small_footer);
 
 	show_menu_widget (ms->menu);
 
@@ -508,10 +544,20 @@ void menu_start_show (MenuStart * ms, int xpos, int ypos, MenuStartPosition pos)
 
 	gtk_widget_set_size_request (GTK_WIDGET (ms), ms->width, ms->height);
 
-	gtk_widget_show (ms->header);
-	gtk_widget_show_all (ms->footbox);
-	//gtk_widget_hide (ms->header);
-	//gtk_widget_hide (ms->footbox);
+	if (ms->show_header) {
+		gtk_widget_show (ms->header);
+		gtk_widget_hide (ms->small_header);
+	} else {
+		gtk_widget_hide (ms->header);
+	}
+
+	if (ms->show_footer) {
+		gtk_widget_show_all (ms->footbox);
+		gtk_widget_hide (ms->small_footer);
+	} else {
+		gtk_widget_hide (ms->footbox);
+		gtk_widget_show_all (ms->small_footer);
+	}
 
 	gtk_widget_hide (ms->fsbrowser);
 	gtk_widget_hide (ms->fstab);
