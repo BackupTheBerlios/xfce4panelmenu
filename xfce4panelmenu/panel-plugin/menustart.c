@@ -546,10 +546,10 @@ void menu_start_show (MenuStart * ms, int xpos, int ypos, MenuStartPosition pos)
 
 	if (ms->show_header) {
 		gtk_widget_show (ms->header);
-		gtk_widget_hide (ms->small_header);
 	} else {
 		gtk_widget_hide (ms->header);
 	}
+	gtk_widget_hide (ms->small_header);
 
 	if (ms->show_footer) {
 		gtk_widget_show_all (ms->footbox);
