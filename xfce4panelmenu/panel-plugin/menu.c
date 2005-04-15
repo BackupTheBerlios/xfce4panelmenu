@@ -674,15 +674,15 @@ menu_start_create_button_name (char *icon, gchar * text,
 
 	if (icon && g_file_test(icon, G_FILE_TEST_EXISTS)) {
 		pixbuf = gdk_pixbuf_new_from_file_at_size
-			(icon, 20, 20, NULL);
+			(icon, 16, 16, NULL);
 	}
 
 	if (!pixbuf && icon && icon[0] != '/') {
-		pixbuf = xfce_icon_theme_load (xfce_icon_theme_get_for_screen (NULL), icon, 20);
+		pixbuf = xfce_icon_theme_load (xfce_icon_theme_get_for_screen (NULL), icon, 16);
 	}
 	if (!pixbuf) {
 		pixbuf = gdk_pixbuf_new_from_file_at_size
-			(ICONDIR "/xfce4_xicon2.png", 20, 20, NULL);
+			(ICONDIR "/xfce4_xicon2.png", 16, 16, NULL);
 	}
 	image = gtk_image_new_from_pixbuf (pixbuf);
 
