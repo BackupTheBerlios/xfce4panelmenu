@@ -158,9 +158,9 @@ static void show_fstab_widget (GtkWidget *self, gpointer data)
 
 	fs_tab_widget_update (FS_TAB_WIDGET (menu->fstab));
 
-	update_ms_header (menu, "Mounter", "gtk-harddisk");
+	update_ms_header (menu, _("Mounter"), "gtk-harddisk");
 
-	gtk_widget_hide (menu->menu);
+	gtk_widget_hide (menu->menu_ebox);
 
 	if (!menu->show_header) {
 		gtk_widget_show_all (menu->small_header);
@@ -173,7 +173,7 @@ static void hide_fstab_widget (GtkWidget *self, gpointer data)
 {
 	MenuStart *menu = (MenuStart *) data;
 
-	update_ms_header (menu, "Menu", "gtk-index");
+	update_ms_header (menu, _("Menu"), "gtk-index");
 
 	gtk_widget_hide (menu->fstab);
 
@@ -181,6 +181,7 @@ static void hide_fstab_widget (GtkWidget *self, gpointer data)
 		gtk_widget_hide (menu->small_header);
 	}
 
+	gtk_widget_show (menu->menu_ebox);
 	show_menu_widget (menu->menu);
 }
 
@@ -189,9 +190,9 @@ static void show_fsbrowser_widget (GtkWidget *self, gpointer data)
 {
 	MenuStart *menu = (MenuStart *) data;
 
-	update_ms_header (menu, "File Browser", "gtk-open");
+	update_ms_header (menu, _("File Browser"), "gtk-open");
 
-	gtk_widget_hide (menu->menu);
+	gtk_widget_hide (menu->menu_ebox);
 
 	if (!menu->show_header) {
 		gtk_widget_show_all (menu->small_header);
@@ -204,7 +205,7 @@ static void hide_fsbrowser_widget (GtkWidget *self, gpointer data)
 {
 	MenuStart *menu = (MenuStart *) data;
 
-	update_ms_header (menu, "Menu", "gtk-index");
+	update_ms_header (menu, _("Menu"), "gtk-index");
 
 	gtk_widget_hide (menu->fsbrowser);
 
@@ -212,6 +213,7 @@ static void hide_fsbrowser_widget (GtkWidget *self, gpointer data)
 		gtk_widget_hide (menu->small_header);
 	}
 
+	gtk_widget_show (menu->menu_ebox);
 	show_menu_widget (menu->menu);
 }
 
@@ -219,9 +221,9 @@ static void show_fsbrowser_widget_with_rf (GtkWidget *self, gpointer data)
 {
 	MenuStart *menu = (MenuStart *) data;
 
-	update_ms_header (menu, "File Browser", "gtk-open");
+	update_ms_header (menu, _("File Browser"), "gtk-open");
 
-	gtk_widget_hide (menu->menu);
+	gtk_widget_hide (menu->menu_ebox);
 
 	if (!menu->show_header) {
 		gtk_widget_show_all (menu->small_header);
@@ -373,12 +375,11 @@ static void menu_start_init (MenuStart *ms)
 	logo = gdk_pixbuf_new_from_file (logo_path, NULL);
 	g_free (logo_path);
 
-	ms->small_header = create_menu_header ("Xfce4 Panel Menu");
+	ms->small_header = create_menu_header (_("Xfce4 Panel Menu"));
 	gtk_box_pack_start (GTK_BOX (ms->vbox), ms->small_header, FALSE, TRUE, 0);
 	gtk_widget_hide (ms->small_header);
 
 	text = g_strdup_printf (_("Xfce4 Panel Menu"));
-	//	ms->header = create_header (logo, text);
 	ms->header = create_ms_header (ms);
 	gtk_box_pack_start (GTK_BOX (ms->vbox), ms->header, FALSE, FALSE, 0);
 	g_object_unref (logo);
@@ -409,7 +410,10 @@ static void menu_start_init (MenuStart *ms)
 			  "completed", G_CALLBACK (hide_cb), ms);
 	g_signal_connect (G_OBJECT (ms->menu),
 			  "getgrab", G_CALLBACK (get_grab_cb), ms);
-	gtk_box_pack_start (GTK_BOX (ms->vbox), ms->menu, TRUE, TRUE, 0);
+
+	ms->menu_ebox = gtk_event_box_new ();
+	gtk_container_add (GTK_CONTAINER (ms->menu_ebox), ms->menu);
+	gtk_box_pack_start (GTK_BOX (ms->vbox), ms->menu_ebox, TRUE, TRUE, 0);
 
 	/* foot */
 
@@ -441,7 +445,7 @@ static void menu_start_init (MenuStart *ms)
 	gtk_widget_show (ms->header);
 	gtk_widget_show_all (ms->footbox);
 
-	ms->small_footer = create_menu_header ("Xfce4 Panel Menu");
+	ms->small_footer = create_menu_header (_("Xfce4 Panel Menu"));
 	gtk_box_pack_start (GTK_BOX (ms->vbox), ms->small_footer, FALSE, TRUE, 0);
 	gtk_widget_hide (ms->small_footer);
 
@@ -561,6 +565,9 @@ void menu_start_show (MenuStart * ms, int xpos, int ypos, MenuStartPosition pos)
 
 	gtk_widget_hide (ms->fsbrowser);
 	gtk_widget_hide (ms->fstab);
+
+	gtk_widget_show (ms->menu_ebox);
+	update_ms_header (ms, _("Menu"), "gtk-index");
 	show_menu_widget (ms->menu);
 
 	if (pos == MENU_START_BOTTOM)

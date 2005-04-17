@@ -225,7 +225,8 @@ static GtkTreeModel *create_model (FsTabWidget *ft)
 
 			pixbuf = MIME_ICON_create_pixbuf (stock_id);
 			if (!pixbuf) {
-
+				pixbuf = gdk_pixbuf_new_from_file_at_size
+					(ICONDIR "/xfce4_xicon2.png", 47, 48, NULL);
 			}
 			gtk_list_store_set (list, &iter,
 					    PATH, name,

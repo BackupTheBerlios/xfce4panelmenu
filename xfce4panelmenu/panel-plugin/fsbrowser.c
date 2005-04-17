@@ -244,11 +244,13 @@ GdkPixbuf *get_mime_icon (gchar *mime_desc) {
 			/* ppixbuf = MIME_ICON_create_pixbuf (file); */
 
 			file_path = xfce_icon_theme_lookup
-				(xfce_icon_theme_get_for_screen (NULL), file, 32);
+				(xfce_icon_theme_get_for_screen (NULL), file, 48);
 
-			ppixbuf = gdk_pixbuf_new_from_file (file_path, NULL);
+			if (file_path) {
+				ppixbuf = gdk_pixbuf_new_from_file (file_path, NULL);
 
-			g_free (file_path);
+				g_free (file_path);
+			}
 			g_free (file);
 		}
 		g_strfreev (end);
@@ -260,7 +262,7 @@ GdkPixbuf *get_mime_icon (gchar *mime_desc) {
 		file = g_strdup ("gnome-fs-regular");
 
 		file_path = xfce_icon_theme_lookup
-			(xfce_icon_theme_get_for_screen (NULL), file, 32);
+			(xfce_icon_theme_get_for_screen (NULL), file, 48);
 
 		ppixbuf = gdk_pixbuf_new_from_file (file_path, NULL);
 
@@ -269,8 +271,17 @@ GdkPixbuf *get_mime_icon (gchar *mime_desc) {
 /* 		ppixbuf = MIME_ICON_create_pixbuf ("gnome-fs-regular.png"); */
 	}
 	if (ppixbuf) {
+		int x, y;
+		double z;
+
+		x = gdk_pixbuf_get_width (ppixbuf); 
+		y = gdk_pixbuf_get_height (ppixbuf); 
+
+		z = ((double)40/MAX(x,y));
+
 		pixbuf = gdk_pixbuf_scale_simple
-			(ppixbuf, 32, 32, GDK_INTERP_HYPER);
+			(ppixbuf, z*x, z*y, GDK_INTERP_BILINEAR);
+
 		g_object_unref (ppixbuf);
 	} else {
 		pixbuf = icon2;
@@ -598,7 +609,7 @@ int fs_browser_read_dir (FsBrowser *browser)
 			is_dir = FALSE;
 
 			if (browser->mime_check) {
-				str = MIME_get_type (entry[i]->d_name, TRUE);
+				str = MIME_get_type (entry[i]->d_name, FALSE);
 			}
 			if (str) {
 				desc = g_strjoin ("", entry[i]->d_name,
@@ -616,17 +627,24 @@ int fs_browser_read_dir (FsBrowser *browser)
 			file = g_strdup ("gnome-fs-directory");
 
 			file_path = xfce_icon_theme_lookup
-				(xfce_icon_theme_get_for_screen (NULL), file, 32);
+				(xfce_icon_theme_get_for_screen (NULL), file, 48);
 
 			ppixbuf = gdk_pixbuf_new_from_file (file_path, NULL);
 
 			g_free (file_path);
 			g_free (file);
 
-			/* GdkPixbuf *ppixbuf = MIME_ICON_create_pixbuf ("gnome-fs-directory.svg"); */
 			if (ppixbuf) {
+				int x, y;
+				double z;
+
+				x = gdk_pixbuf_get_width (ppixbuf); 
+				y = gdk_pixbuf_get_height (ppixbuf); 
+
+				z = ((double)40/MAX(x,y));
+
 				pixbuf = gdk_pixbuf_scale_simple
-					(ppixbuf, 32, 32, GDK_INTERP_HYPER);
+					(ppixbuf, z*x, z*y, GDK_INTERP_HYPER);
 				g_object_unref (ppixbuf);
 			} else {
 				pixbuf = icon;
@@ -669,32 +687,8 @@ static void go_entry_dir (GtkEntry *entry, gpointer user_data)
 	}
 }
 
-static GtkWidget *create_button (gchar *stock_id, gchar *text,
-				 GCallback callback, gpointer data)
-{
-	GtkWidget *button;
-	GtkWidget *label;
-	GtkWidget *button_hbox;
-	GtkWidget *image;
-
-	button = gtk_button_new ();
-	image = gtk_image_new_from_stock (stock_id,
-					  GTK_ICON_SIZE_LARGE_TOOLBAR);
-	label = gtk_label_new (text);
-	button_hbox = gtk_hbox_new (FALSE, 5);
-	gtk_box_pack_start (GTK_BOX (button_hbox), image, FALSE, FALSE, 0);
-	gtk_box_pack_start (GTK_BOX (button_hbox), label, FALSE, FALSE, 0);
-	gtk_container_add (GTK_CONTAINER (button), button_hbox);
-	gtk_button_set_relief (GTK_BUTTON (button), GTK_RELIEF_NONE);
-	if (callback)
-		g_signal_connect (G_OBJECT (button), "clicked",
-				  G_CALLBACK (callback), data);
-
-	return button;
-}
-
 static GtkWidget *create_toggle_button (gchar *stock_id, gchar *text,
-				 GCallback callback, gpointer data)
+					GCallback callback, gpointer data)
 {
 	GtkWidget *button;
 	GtkWidget *label;
@@ -1125,12 +1119,12 @@ fs_browser_init (FsBrowser * fb)
 
 	hbox = gtk_hbox_new (TRUE, 0);
 
-	button = create_button ("gtk-home", "Home", NULL, NULL);
+	button = menu_start_create_button ("gtk-home", "Home", NULL, NULL);
 	g_signal_connect_after (G_OBJECT (button), "clicked",
 				G_CALLBACK (go_home_dir), fb);
 	gtk_box_pack_start (GTK_BOX (hbox), button, TRUE, TRUE, 0);
 
-	button = create_button ("gtk-harddisk", "Root", NULL, NULL);
+	button = menu_start_create_button ("gtk-harddisk", "Root", NULL, NULL);
 	g_signal_connect_after (G_OBJECT (button), "clicked",
 				G_CALLBACK (go_root_dir), fb);
 	gtk_box_pack_start (GTK_BOX (hbox), button, TRUE, TRUE, 0);
@@ -1155,7 +1149,7 @@ fs_browser_init (FsBrowser * fb)
 	gtk_icon_view_set_pixbuf_column (GTK_ICON_VIEW (fb->view), ICON_COLUMN);
 
 	gtk_icon_view_set_orientation (GTK_ICON_VIEW (fb->view), GTK_ORIENTATION_HORIZONTAL);
-	gtk_icon_view_set_item_width (GTK_ICON_VIEW (fb->view), 180);
+	gtk_icon_view_set_item_width (GTK_ICON_VIEW (fb->view), 280);
 
 	scroll = gtk_scrolled_window_new (NULL, NULL);
 	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll),
@@ -1169,17 +1163,17 @@ fs_browser_init (FsBrowser * fb)
 
 	hbox = gtk_hbox_new (TRUE, 0);
 
-	button = create_button ("gtk-convert", "show/hide .files", NULL, fb);
+	button = menu_start_create_button ("gtk-convert", "show/hide .files", NULL, fb);
 	g_signal_connect_after (G_OBJECT (button), "clicked",
 				G_CALLBACK (switch_dot_files), fb);
 	gtk_box_pack_start (GTK_BOX (hbox), button, TRUE, TRUE, 0);
 
-	button = create_button ("gtk-go-up", "Up directory", NULL, fb);
+	button = menu_start_create_button ("gtk-go-up", "Up directory", NULL, fb);
 	g_signal_connect_after (G_OBJECT (button), "clicked",
 				G_CALLBACK (go_up_dir), fb);
 	gtk_box_pack_start (GTK_BOX (hbox), button, TRUE, TRUE, 0);
 
-	fb->closebutton = create_button ("gtk-close", "Close", NULL, fb);
+	fb->closebutton = menu_start_create_button ("gtk-close", "Close", NULL, fb);
 	gtk_box_pack_start (GTK_BOX (hbox), fb->closebutton, TRUE, TRUE, 0);
 
 	gtk_box_pack_start (GTK_BOX (fb), hbox, FALSE, FALSE, 0);

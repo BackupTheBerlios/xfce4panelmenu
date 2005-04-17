@@ -37,7 +37,10 @@ typedef struct MenuStart {
 	GtkWidget *vbox;
 
 	GtkWidget *header;
+
 	GtkWidget *menu;
+	GtkWidget *menu_ebox;
+
 	GtkWidget *fstab;
 	GtkWidget *fsbrowser;
 

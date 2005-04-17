@@ -21,26 +21,31 @@
 
 /*******************************************************************************/
 
-#define SYSTEM_MENU_TYPE            (system_menu_get_type ())
-#define SYSTEM_MENU(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj),\
-                            MENU_TYPE, SystemMenu))
-#define SYSTEM_MENU_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),\
-                            MENU_TYPE, SystemMenuClass))
-#define IS_SYSTEM_MENU(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj),\
-                            SYSTEM_MENU_TYPE))
-#define IS_SYSTEM_MENU_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),\
-                            SYSTEM_MENU_TYPE))
+#define SCROLLED_BOX_TYPE            (scrolled_box_get_type ())
+#define SCROLLED_BOX(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj),\
+                            SCROLLED_BOX_TYPE, ScrolledBox))
+#define SCROLLED_BOX_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),\
+                            SCROLLED_BOX_TYPE, ScrolledBoxClass))
+#define IS_SCROLLED_BOX(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj),\
+                            SCROLLED_BOX_TYPE))
+#define IS_SCROLLED_BOX_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),\
+                            SCROLLED_BOX_TYPE))
 
-typedef struct SystemMenuClass {
+typedef struct {
+	GtkLayoutClass class;
+} ScrolledBoxClass;
 
-};
+typedef struct {
+	GtkLayout layout;
 
-typedef struct SystemMenu {
+	GtkWidget *child;
 
-};
+	gint x;
+	gint y;
+} ScrolledBox;
 
-GType system_menu_get_type ();
-GtkWidget *system_menu_new ();
+GType scrolled_box_get_type ();
+GtkWidget *scrolled_box_new (GtkWidget *child);
 
 /*******************************************************************************/
 
@@ -54,7 +59,7 @@ GtkWidget *system_menu_new ();
 #define IS_MENU_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),\
                             MENU_TYPE))
 
-#define COLUMNS_COUNT 4
+#define COLUMNS_COUNT 6
 
 struct MenuStart;
 
@@ -69,14 +74,14 @@ struct user_action
 typedef struct Menu {
 	GtkHBox box;
 
-	GList *user_actions;
+	GList *user_actions[COLUMNS_COUNT];
 	unsigned int atime;
 
 	int columns;
+	GtkWidget *column_scrolls[COLUMNS_COUNT];
 	GtkWidget *column_boxes[COLUMNS_COUNT];
-	GtkWidget *column_eboxes[COLUMNS_COUNT];
 
-	int user_apps_count;
+	GtkWidget *col_boxes[COLUMNS_COUNT];
 
 	int r_apps_count;
 	gchar *set_app;
@@ -88,11 +93,8 @@ typedef struct Menu {
 
 	gboolean grab;
 
-	GtkWidget *rbox;
-	GtkWidget *rebox;
-
-	GtkWidget *lbox;
-	GtkWidget *lebox;
+	GtkWidget *rec_app_scroll;
+	GtkWidget *rec_app_box;
 
 	GtkWidget *app_header;
 

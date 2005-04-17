@@ -28,12 +28,9 @@ char *ms_get_save_file (const char *name)
 		char *realname;
 
 		realname = g_strdup_printf ("%s.%u", name, scr);
-
 		path = g_build_filename ("xfce4", "panel", realname, NULL);
-
 		g_free (realname);
 	}
-
 	file = xfce_resource_save_location (XFCE_RESOURCE_CONFIG, path, TRUE);
 	g_free (path);
 
@@ -47,10 +44,8 @@ static char *get_localized_rcfile (const char *path)
 	char buffer[PATH_MAX];
 
 	fmt = g_strconcat (path, ".%l", NULL);
-
 	result = xfce_get_path_localized (buffer, PATH_MAX, fmt, NULL,
 					  G_FILE_TEST_EXISTS);
-
 	g_free (fmt);
 
 	if (result) {
@@ -314,8 +309,6 @@ GtkWidget *init_browser_page (Control *ctrl)
 	vbox = gtk_vbox_new (FALSE, 1);
 
 	gtk_container_set_border_width (GTK_CONTAINER (vbox), 5);
-	//gtk_widget_hide (ms->header);
-	//gtk_widget_hide (ms->footbox);
 	table = gtk_table_new (6, 3, TRUE);
 
 	ms->mime_check = gtk_check_button_new_with_label
@@ -375,7 +368,7 @@ GtkWidget *init_general_page (Control *ctrl)
 
 	gtk_container_set_border_width (GTK_CONTAINER (vbox), 5);
 
-	table = gtk_table_new (6, 3, TRUE);
+	table = gtk_table_new (4, 3, TRUE);
 
 
 	label = gtk_label_new ("Items count in recent apps menu");
@@ -411,47 +404,17 @@ GtkWidget *init_general_page (Control *ctrl)
 	gtk_table_attach (GTK_TABLE (table), ms->lock_entry, 1, 3, 2, 3,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
 
-	label = gtk_label_new ("Setting Command");
-	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
-	gtk_table_attach (GTK_TABLE (table), label, 0, 1, 3, 4,
-			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
-	ms->set_entry = gtk_entry_new ();
-	gtk_entry_set_text (GTK_ENTRY (ms->set_entry),
-			    MENU (menu)->set_app);
-	gtk_table_attach (GTK_TABLE (table), ms->set_entry, 1, 3, 3, 4,
-			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
-
 	ms->show_header = gtk_check_button_new_with_label ("Show Header");
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (ms->show_header),
 				      MENU_START (((struct menu_start *) ctrl->data)->menustart)->show_header);
-	gtk_table_attach (GTK_TABLE (table), ms->show_header, 0, 3, 4, 5,
+	gtk_table_attach (GTK_TABLE (table), ms->show_header, 0, 1, 3, 4,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
-
-/* 	label = gtk_label_new ("Run Command"); */
-/* 	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5); */
-/* 	gtk_table_attach (GTK_TABLE (table), label, 0, 1, 4, 5, */
-/* 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1); */
-/* 	ms->run_entry = gtk_entry_new (); */
-/* 	gtk_entry_set_text (GTK_ENTRY (ms->run_entry), */
-/* 			    MENU (menu)->run_app); */
-/* 	gtk_table_attach (GTK_TABLE (table), ms->run_entry, 1, 3, 4, 5, */
-/* 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1); */
 
 	ms->show_footer = gtk_check_button_new_with_label ("Show Footer");
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (ms->show_footer),
 				      MENU_START (((struct menu_start *) ctrl->data)->menustart)->show_footer);
-	gtk_table_attach (GTK_TABLE (table), ms->show_footer, 0, 3, 5, 6,
+	gtk_table_attach (GTK_TABLE (table), ms->show_footer, 1, 2, 3, 4,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
-
-/* 	label = gtk_label_new ("Term Command"); */
-/* 	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5); */
-/* 	gtk_table_attach (GTK_TABLE (table), label, 0, 1, 5, 6, */
-/* 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1); */
-/* 	ms->term_entry = gtk_entry_new (); */
-/* 	gtk_entry_set_text (GTK_ENTRY (ms->term_entry), */
-/* 			    MENU (menu)->term_app); */
-/* 	gtk_table_attach (GTK_TABLE (table), ms->term_entry, 1, 3, 5, 6, */
-/* 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1); */
 
 	gtk_box_pack_start (GTK_BOX (vbox), table, FALSE, TRUE, 3);
 
@@ -504,19 +467,6 @@ GtkWidget *init_general_page (Control *ctrl)
 	gtk_table_attach (GTK_TABLE (table), ms->columns_spin, 1, 2, 2, 3,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
 
-	label = gtk_label_new ("Set user apps count in 2nd column");
-	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
-	gtk_table_attach (GTK_TABLE (table), label, 0, 2, 3, 4,
-			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
-	ms->user_count = gtk_spin_button_new_with_range (1, 128, 1);
-	gtk_spin_button_set_increments (GTK_SPIN_BUTTON (ms->user_count), 1, 1);
-	gtk_spin_button_set_value (GTK_SPIN_BUTTON (ms->user_count),
-				   MENU (menu)->user_apps_count);
-	gtk_table_attach (GTK_TABLE (table), ms->user_count, 2, 3, 3, 4,
-			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
-
-	
-
 	gtk_box_pack_start (GTK_BOX (vbox), table, FALSE, TRUE, 3);
 
 	return vbox;
@@ -539,11 +489,7 @@ apply_options (gpointer data)
 	value = gtk_spin_button_get_value (GTK_SPIN_BUTTON (ms->recent_count));
 	menu->r_apps_count = (int) value;
 
-	value = gtk_spin_button_get_value (GTK_SPIN_BUTTON (ms->user_count));
-	menu->user_apps_count = (int) value;
-
-	menu_repack_user_apps (menu);
-	menu_repack_recent_apps (menu);
+ 	menu_repack_recent_apps (menu);
 
 	value = gtk_spin_button_get_value (GTK_SPIN_BUTTON (ms->width_spin));
 	MENU_START (ms->menustart)->width = value;
@@ -583,21 +529,6 @@ apply_options (gpointer data)
 	if (MENU_START (ms->menustart)->switch_app)
 		free (MENU_START (ms->menustart)->switch_app);
 	MENU_START (ms->menustart)->switch_app = app;
-
-	app = g_strdup (gtk_entry_get_text (GTK_ENTRY (ms->set_entry)));
-	if (menu->set_app)
-		free (menu->set_app);
-	menu->set_app = app;
-
-/* 	app = g_strdup (gtk_entry_get_text (GTK_ENTRY (ms->run_entry))); */
-/* 	if (menu->run_app) */
-/* 		free (menu->run_app); */
-/* 	menu->run_app = app; */
-
-/* 	app = g_strdup (gtk_entry_get_text (GTK_ENTRY (ms->term_entry))); */
-/* 	if (menu->term_app) */
-/* 		free (menu->term_app); */
-/* 	menu->term_app = app; */
 }
 
 static void
@@ -609,7 +540,7 @@ menustart_create_options (Control *ctrl, GtkContainer *con, GtkWidget *done)
 
 	notebook = gtk_notebook_new ();
 
-	label = gtk_label_new ("General");
+	label = gtk_label_new (_("General"));
 	vbox = init_general_page (ctrl);
 	gtk_notebook_append_page (GTK_NOTEBOOK (notebook), vbox, label);
 
@@ -660,15 +591,6 @@ read_conf (Control *control, xmlNodePtr node)
 		}
 	}
 
-	value = xmlGetProp(node, (const xmlChar *) "user_app_count");
-	if (value) {
-		int count = atoi (value);
-		if (menu->user_apps_count != count) {
-			menu->user_apps_count = count;
-			menu_repack_user_apps (menu);
-		}
-	}
-
 	value = xmlGetProp(node, (const xmlChar *) "lock_app");
 	if (value) {
 		if (MENU_START (ms->menustart)->lock_app)
@@ -681,13 +603,6 @@ read_conf (Control *control, xmlNodePtr node)
 		if (MENU_START (ms->menustart)->switch_app)
 			free (MENU_START (ms->menustart)->switch_app);
 		MENU_START (ms->menustart)->switch_app = value;
-	}
-
-	value = xmlGetProp(node, (const xmlChar *) "set_app");
-	if (value) {
-		if (menu->set_app)
-			free (menu->set_app);
-		menu->set_app = value;
 	}
 
 	value = xmlGetProp(node, (const xmlChar *) "show_header");
@@ -705,20 +620,6 @@ read_conf (Control *control, xmlNodePtr node)
 	} else {
 		MENU_START (ms->menustart)->show_footer = TRUE;
 	}
-
-/* 	value = xmlGetProp(node, (const xmlChar *) "run_app"); */
-/* 	if (value) { */
-/* 		if (menu->run_app) */
-/* 			free (menu->run_app); */
-/* 		menu->run_app = value; */
-/* 	} */
-
-/* 	value = xmlGetProp(node, (const xmlChar *) "term_app"); */
-/* 	if (value) { */
-/* 		if (menu->term_app) */
-/* 			free (menu->term_app); */
-/* 		menu->term_app = value; */
-/* 	} */
 
 	value = xmlGetProp(node, (const xmlChar *) "width");
 	if (value) {
@@ -760,11 +661,8 @@ write_conf (Control *control, xmlNodePtr node)
 	sprintf (count, "%d", menu->r_apps_count);
 	xmlSetProp(node, (const xmlChar *) "recent_app_count", count);
 
-	sprintf (count, "%d", menu->user_apps_count);
-	xmlSetProp(node, (const xmlChar *) "user_app_count", count);
-
 	sprintf (count, "%d", MENU_START (ms->menustart)->show_header);
-	xmlSetProp(node, (const xmlChar *) "show_header", count);
+	xmlSetProp(node, (const xmlChar *) _("show_header"), count);
 
 	sprintf (count, "%d", MENU_START (ms->menustart)->show_footer);
 	xmlSetProp(node, (const xmlChar *) "show_footer", count);
@@ -777,10 +675,6 @@ write_conf (Control *control, xmlNodePtr node)
 
 	sprintf (count, "%d", menu->columns);
 	xmlSetProp(node, (const xmlChar *) "columns", count);
-
-	xmlSetProp(node, (const xmlChar *) "set_app", menu->set_app);
-	xmlSetProp(node, (const xmlChar *) "run_app", menu->run_app);
-	xmlSetProp(node, (const xmlChar *) "term_app", menu->term_app);
 
 	xmlSetProp(node,
 		   (const xmlChar *) "lock_app",
@@ -796,7 +690,7 @@ write_conf (Control *control, xmlNodePtr node)
 
 G_MODULE_EXPORT void xfce_control_class_init (ControlClass *cc)
 {
-	xfce_textdomain (GETTEXT_PACKAGE, LOCALEDIR, "UTF-8");
+	xfce_textdomain (GETTEXT_PACKAGE, PACKAGE_LOCALE_DIR, "UTF-8");
 
 	cc->name = "menustart";
 	cc->caption = _("Xfce4 Panel Menu");
