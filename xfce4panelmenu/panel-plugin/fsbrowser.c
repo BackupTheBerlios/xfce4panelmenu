@@ -315,7 +315,7 @@ static void show_recent_files (FsBrowser *browser)
 		path = (gchar *) tmp->data;
 
 		if (browser->mime_check) {
-			str = MIME_get_type (path, TRUE);
+			str = MIME_get_type (path, FALSE);
 		}
 		if (str) {
 			desc = g_strjoin ("", path,
@@ -461,7 +461,10 @@ static GList *read_recent_files (void)
 
 	for (node = node->children; node; node = node->next) {
 		if (xmlStrEqual (node->name, "file")) {
-			files = g_list_append (files, xmlGetProp (node, "path"));
+			char *value = xmlGetProp (node, "path");
+			if (g_file_test (value, G_FILE_TEST_EXISTS)) {
+				files = g_list_append (files, xmlGetProp (node, "path"));
+			}
 		}
 	}
 
@@ -627,7 +630,7 @@ int fs_browser_read_dir (FsBrowser *browser)
 			file = g_strdup ("gnome-fs-directory");
 
 			file_path = xfce_icon_theme_lookup
-				(xfce_icon_theme_get_for_screen (NULL), file, 48);
+				(xfce_icon_theme_get_for_screen (NULL), file, 40);
 
 			ppixbuf = gdk_pixbuf_new_from_file (file_path, NULL);
 
@@ -662,7 +665,8 @@ int fs_browser_read_dir (FsBrowser *browser)
 				    -1);
 	}
 
-	gtk_entry_set_text (GTK_ENTRY (browser->entry), s_path);
+/* 	gtk_entry_set_text (GTK_ENTRY (browser->entry), s_path); */
+	gtk_label_set_text (GTK_LABEL (browser->entry), s_path);
 
 	return 0;
 }
@@ -1105,6 +1109,7 @@ fs_browser_init (FsBrowser * fb)
 	GtkListStore *list;
 	GtkTreeViewColumn *column;
 	GtkCellRenderer *renderer;
+	GtkWidget *box;
 
 	fb->mime_command = NULL;
 	fb->mime_check = TRUE;
@@ -1112,10 +1117,18 @@ fs_browser_init (FsBrowser * fb)
 
 	gtk_box_set_homogeneous (GTK_BOX (fb), FALSE);
 
-	fb->entry = gtk_entry_new ();
-	gtk_entry_set_editable (GTK_ENTRY (fb->entry), FALSE);
-	gtk_entry_set_has_frame (GTK_ENTRY (fb->entry), FALSE);
-	gtk_box_pack_start (GTK_BOX (fb), fb->entry, FALSE, FALSE, 0);
+/* 	fb->entry = gtk_entry_new (); */
+/* 	gtk_entry_set_editable (GTK_ENTRY (fb->entry), FALSE); */
+/* 	gtk_entry_set_has_frame (GTK_ENTRY (fb->entry), FALSE); */
+	fb->entry = gtk_label_new (NULL);
+	gtk_label_set_ellipsize (GTK_LABEL (fb->entry), PANGO_ELLIPSIZE_MIDDLE);
+	gtk_misc_set_alignment (GTK_MISC (fb->entry), 0.0, 0.5);
+
+	box = gtk_event_box_new ();
+	gtk_container_set_border_width (GTK_CONTAINER (box), 2);
+	gtk_container_add (GTK_CONTAINER (box), fb->entry);
+
+	gtk_box_pack_start (GTK_BOX (fb), box, FALSE, TRUE, 0);
 
 	hbox = gtk_hbox_new (TRUE, 0);
 

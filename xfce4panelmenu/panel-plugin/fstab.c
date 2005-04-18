@@ -210,20 +210,39 @@ static GtkTreeModel *create_model (FsTabWidget *ft)
 			gtk_list_store_append (list, &iter);
 
 			if (strcmp (fs, "iso9660") == 0) {
-				stock_id = "stock_cdrom.png";
+				stock_id = xfce_icon_theme_lookup
+					(xfce_icon_theme_get_for_screen (NULL),
+					 "gnome-dev-cdrom", 48);
+				//stock_id = "stock_cdrom.png";
 			} else if (strcmp (fs, "cd9660") == 0){
-				stock_id = "stock_cdrom.png";
+				stock_id = xfce_icon_theme_lookup
+					(xfce_icon_theme_get_for_screen (NULL),
+					 "gnome-dev-cdrom", 48);
+				//stock_id = "stock_cdrom.png";
 			} else if (strcmp (fs, "swap") == 0){
-				stock_id = "stock_convert.png";
+				stock_id = xfce_icon_theme_lookup
+					(xfce_icon_theme_get_for_screen (NULL),
+					 "gnome-dev-memory", 48);
+				//stock_id = "stock_convert.png";
 			} else if (strcmp (fs, "proc") == 0){
-				stock_id = "stock_index.png";
+				stock_id = xfce_icon_theme_lookup
+					(xfce_icon_theme_get_for_screen (NULL),
+					 "gnome-dev-memory", 48);
+				//stock_id = "stock_index.png";
 			} else if (strcmp (fs, "nfs") == 0){
-				stock_id = "stock_network.png";
+				stock_id = xfce_icon_theme_lookup
+					(xfce_icon_theme_get_for_screen (NULL),
+					 "gnome-dev-harddisk", 48);
+				//stock_id = "stock_network.png";
 			} else {
-				stock_id = "stock_harddisk.png";
+				stock_id = xfce_icon_theme_lookup
+					(xfce_icon_theme_get_for_screen (NULL),
+					 "gnome-dev-harddisk", 48);
+				//stock_id = "stock_harddisk.png";
 			}
 
-			pixbuf = MIME_ICON_create_pixbuf (stock_id);
+			//pixbuf = MIME_ICON_create_pixbuf (stock_id);
+			pixbuf = gdk_pixbuf_new_from_file (stock_id, NULL);
 			if (!pixbuf) {
 				pixbuf = gdk_pixbuf_new_from_file_at_size
 					(ICONDIR "/xfce4_xicon2.png", 47, 48, NULL);
@@ -236,6 +255,7 @@ static GtkTreeModel *create_model (FsTabWidget *ft)
  					    MARKUP, " ",
 					    ICON, pixbuf,
 					    -1);
+			g_free (stock_id);
 		}
 	}
 
