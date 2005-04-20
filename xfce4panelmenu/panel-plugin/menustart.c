@@ -160,7 +160,7 @@ static void show_fstab_widget (GtkWidget *self, gpointer data)
 
 	update_ms_header (menu, _("Mounter"), "gtk-harddisk");
 
-	gtk_widget_hide (menu->menu_ebox);
+	gtk_widget_hide (menu->menu);
 
 	if (!menu->show_header) {
 		gtk_widget_show_all (menu->small_header);
@@ -181,7 +181,7 @@ static void hide_fstab_widget (GtkWidget *self, gpointer data)
 		gtk_widget_hide (menu->small_header);
 	}
 
-	gtk_widget_show (menu->menu_ebox);
+	gtk_widget_show (menu->menu);
 	show_menu_widget (menu->menu);
 }
 
@@ -192,7 +192,7 @@ static void show_fsbrowser_widget (GtkWidget *self, gpointer data)
 
 	update_ms_header (menu, _("File Browser"), "gtk-open");
 
-	gtk_widget_hide (menu->menu_ebox);
+	gtk_widget_hide (menu->menu);
 
 	if (!menu->show_header) {
 		gtk_widget_show_all (menu->small_header);
@@ -213,7 +213,7 @@ static void hide_fsbrowser_widget (GtkWidget *self, gpointer data)
 		gtk_widget_hide (menu->small_header);
 	}
 
-	gtk_widget_show (menu->menu_ebox);
+	gtk_widget_show (menu->menu);
 	show_menu_widget (menu->menu);
 }
 
@@ -223,7 +223,7 @@ static void show_fsbrowser_widget_with_rf (GtkWidget *self, gpointer data)
 
 	update_ms_header (menu, _("File Browser"), "gtk-open");
 
-	gtk_widget_hide (menu->menu_ebox);
+	gtk_widget_hide (menu->menu);
 
 	if (!menu->show_header) {
 		gtk_widget_show_all (menu->small_header);
@@ -367,7 +367,10 @@ static void menu_start_init (MenuStart *ms)
 
 	gtk_container_set_border_width (GTK_CONTAINER (ms->vbox), 0);
 
-	gtk_container_add (GTK_CONTAINER (ms->frame), ms->vbox);
+	ms->menu_ebox = gtk_event_box_new ();
+	gtk_container_add (GTK_CONTAINER (ms->menu_ebox), ms->vbox);
+
+	gtk_container_add (GTK_CONTAINER (ms->frame), ms->menu_ebox);
 	gtk_container_add (GTK_CONTAINER (ms), ms->frame);
 
 	logo_path = g_strdup (ICONDIR "/xfce4_xicon.png");
@@ -411,9 +414,7 @@ static void menu_start_init (MenuStart *ms)
 	g_signal_connect (G_OBJECT (ms->menu),
 			  "getgrab", G_CALLBACK (get_grab_cb), ms);
 
-	ms->menu_ebox = gtk_event_box_new ();
-	gtk_container_add (GTK_CONTAINER (ms->menu_ebox), ms->menu);
-	gtk_box_pack_start (GTK_BOX (ms->vbox), ms->menu_ebox, TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (ms->vbox), ms->menu, TRUE, TRUE, 0);
 
 	/* foot */
 

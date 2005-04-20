@@ -1060,24 +1060,6 @@ GtkWidget *menu_new ()
 	if (1) {
 		char *save_file;
 
-		save_file = ms_get_save_file ("recentapps.xml");
-		if (!g_file_test (save_file, G_FILE_TEST_EXISTS)) {
-			FILE *file;
-
-			file = fopen (save_file, "w");
-
-			fprintf (file, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-			fprintf (file, "<apps>\n\n");
-			fprintf (file, "</apps>\n");
-
-			fclose (file);
-		}
-		g_free (save_file);
-	}
-
-	if (1) {
-		char *save_file;
-
 		save_file = ms_get_save_file ("menu.xml");
 		if (!g_file_test (save_file, G_FILE_TEST_EXISTS)) {
 			FILE *file;

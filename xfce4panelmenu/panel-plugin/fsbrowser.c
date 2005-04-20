@@ -23,6 +23,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <wordexp.h>
+#include <time.h>
 
 #include <libxml/parser.h>
 #include <libxml/tree.h>
@@ -177,42 +178,6 @@ xfmime_icon_functions *load_mime_icon_module ()
 	return xfmime_icon_fun;
 }
 
-static GList *free_recent_files_end (GList *list)
-{
-	GList *tmp;
-
-	for (tmp = list; tmp; tmp = tmp->next) {
-		g_free (tmp->data);
-	}
-
-	g_list_free (list);
-
-	return NULL;
-}
-
-static GList *add_recent_file (GList *list, const gchar *path)
-{
-	GList *tmp;
-	int flag = 1;
-
-	while (flag) {
-		for (tmp = list; tmp; tmp = tmp->next) {
-			if (strcmp (path, (char *) tmp->data) == 0) {
-				g_free (tmp->data);
-				list = g_list_delete_link (list, tmp);
-				flag = 0;
-				break;
-			}
-		}
-		if (!flag)
-			flag = 1;
-		else
-			flag = 0;
-	}
-
-	return g_list_prepend (list, g_strdup (path));
-}
-
 gboolean clear_row_pixbuf (GtkTreeModel *model,
 			   GtkTreePath *path, GtkTreeIter *iter,
 			   gpointer data)
@@ -296,6 +261,10 @@ static void show_recent_files (FsBrowser *browser)
 	GtkTreeIter iter;
 	GList *tmp = NULL;
 	int i = 0;
+	xmlDocPtr doc;
+	xmlNodePtr node;
+	char *docname, *home;
+	int fd;
 
 	browser->active = FALSE;
 
@@ -306,40 +275,62 @@ static void show_recent_files (FsBrowser *browser)
 	gtk_list_store_clear (list);
 	/* clear_model (GTK_TREE_MODEL (list)); */
 
-	for (tmp = browser->recent_files; tmp && (i < 50); tmp = tmp->next) {
-		const gchar *str = NULL;
-		gchar *desc;
-		gchar *path;
-		GdkPixbuf *ppixbuf = NULL, *pixbuf = NULL;
+	home = getenv ("HOME");
+	docname = g_build_path ("/", home, ".recently-used", NULL);
 
-		path = (gchar *) tmp->data;
+	fd = open (docname, O_RDONLY);
+	lockf (fd, F_LOCK, 0);
 
-		if (browser->mime_check) {
-			str = MIME_get_type (path, FALSE);
+	doc = xmlParseFile(docname);
+
+	lockf (fd, F_ULOCK, 0);
+	close (fd);
+
+	g_free (docname);
+
+	node = xmlDocGetRootElement (doc);
+	for (node = node->children; node; node = node->next) {
+		if (xmlStrEqual(node->name, (const xmlChar *) "RecentItem")) {
+			char *mime = NULL;
+			char *name = NULL;
+			int off = -1;
+			char *desc;
+			GdkPixbuf *ppixbuf = NULL, *pixbuf = NULL;
+			xmlNodePtr content, tmp;
+
+			for (content = node->children; content; content = content->next) {
+				if (xmlStrEqual (content->name, "URI")) {
+					name = xmlNodeListGetString(doc, content->xmlChildrenNode, 1);
+					if (strncmp ("file://", name, 7) == 0) {
+						off = 7;
+					}
+				}
+				if (xmlStrEqual(content->name, (const xmlChar *) "Mime-Type")) {
+					mime = xmlNodeListGetString(doc, content->xmlChildrenNode, 1);
+				}
+			}
+
+			if (off > 0 && g_file_test (name + off, G_FILE_TEST_EXISTS)) {
+				gtk_list_store_append (list, &iter);
+				pixbuf = get_mime_icon (mime);
+				desc = g_strjoin ("", name + off, "\n\t<i>", mime, "</i>", NULL);
+				gtk_list_store_set (list, &iter,
+						    NAME_COLUMN, (gchar *) name + off,
+						    DESC_COLUMN, desc,
+						    ICON_COLUMN, pixbuf,
+						    -1);
+				g_free (desc);
+			}
+
+			if (mime) {
+				xmlFree (mime);
+			}
+			if (name) {
+				xmlFree (name);
+			}
 		}
-		if (str) {
-			desc = g_strjoin ("", path,
-					  "\n\t<i>",
-					  str, "</i>", NULL);
-		} else {
-			desc = path;
-		}
-
-		pixbuf = get_mime_icon (str);
-
-		gtk_list_store_append (list, &iter);
-		gtk_list_store_set (list, &iter,
-				    NAME_COLUMN, (gchar *) tmp->data,
-				    DESC_COLUMN, desc,
-				    ICON_COLUMN, pixbuf,
-				    -1);
-		i++;				    
 	}
-
-	if ((i == 50) && (tmp)) {
-		tmp->prev->next = NULL;
-		free_recent_files_end (tmp);
-	}
+	xmlFreeDoc(doc);
 }
 
 static void hide_recent_files (FsBrowser *browser)
@@ -360,135 +351,6 @@ static void rfiles_toggled (GtkToggleButton *self, gpointer data)
 	} else {
 		hide_recent_files (browser);
 	}
-}
-
-struct recent_file {
-	char *URI;
-	char *mime;
-	int timestamp;
-};
-
-static gint recent_files_compare (gconstpointer a, gconstpointer b)
-{
-	struct recent_file *A = (struct recent_file*) a;
-	struct recent_file *B = (struct recent_file*) b;
-
-	return A->timestamp - B->timestamp;
-}
-
-static void free_recent_file (gpointer data, gpointer user_data)
-{
-	struct recent_file *rf = (struct recent_file*) data;
-
-	if (rf->URI) {
-		g_free (rf->URI);
-	}
-	if (rf->mime) {
-		g_free (rf->mime);
-	}
-	free (rf);
-}
-
-static void free_recent_files (GList *files)
-{
-	g_list_foreach (files, free_recent_file, NULL);
-	g_list_free (files);
-}
-
-static GList *read_recent_files_new (void)
-{
-	GList *files = NULL;
-	xmlDocPtr doc = NULL;
-	xmlNodePtr node = NULL;
-	char *read_file;
-	char *home;
-	int fd;
-
-	home = getenv ("HOME");
-	read_file = g_build_path ("/", home, ".recently-used", NULL);
-
-	if (!g_file_test (read_file, G_FILE_TEST_EXISTS)) {
-		return NULL;
-	}
-
-	doc = xmlParseFile (read_file);
-	node = xmlDocGetRootElement (doc);
-
-	for (node = node->children; node; node = node->next) {
-		if (xmlStrEqual (node->name, "RecentItem")) {
-			xmlNodePtr tmp_node = NULL;
-			struct recent_file *rf;
-
-			rf = (struct recent_file *) malloc (sizeof (struct recent_file));
-
-			for (tmp_node = node->children; tmp_node; tmp_node = tmp_node->next) {
-				if (xmlStrEqual (node->name, "URI")) {
-
-				}
-				if (xmlStrEqual (node->name, "Mime-Type")) {
-
-				}
-				if (xmlStrEqual (node->name, "Timestamp")) {
-
-				}
-			}
-			files = g_list_append (files, rf);
-		}
-	}
-
-	files = g_list_sort (files, recent_files_compare);
-
-	g_free (read_file);
-
-	return files;
-}
-
-static GList *read_recent_files (void)
-{
-	GList *files = NULL;
-	xmlDocPtr doc = NULL;
-	xmlNodePtr node = NULL;
-	char *read_file;
-
-	read_file = ms_get_read_file ("recentfiles.xml");
-
-	if (!g_file_test (read_file, G_FILE_TEST_EXISTS)) {
-		return NULL;
-	}
-
-	doc = xmlParseFile (read_file);
-	node = xmlDocGetRootElement (doc);
-
-	for (node = node->children; node; node = node->next) {
-		if (xmlStrEqual (node->name, "file")) {
-			char *value = xmlGetProp (node, "path");
-			if (g_file_test (value, G_FILE_TEST_EXISTS)) {
-				files = g_list_append (files, xmlGetProp (node, "path"));
-			}
-		}
-	}
-
-	return files;
-}
-
-static void write_recent_files (GList *rfiles)
-{
-	char *save_file;
-	xmlDocPtr doc = NULL;
-	xmlNodePtr node = NULL, root_node = NULL;
-
-	save_file = ms_get_save_file ("recentfiles.xml");
-
-	doc = xmlNewDoc(BAD_CAST "1.0");
-	root_node = xmlNewNode(NULL, BAD_CAST "recentfiles");
-	xmlDocSetRootElement(doc, root_node);
-
-	for (; rfiles; rfiles = rfiles->next) {
-		node = xmlNewChild(root_node, NULL, BAD_CAST "file", NULL);
-		xmlSetProp(node, (const xmlChar *) "path", (char *) rfiles->data);
-	}
-
-	xmlSaveFormatFile (save_file, doc, 1);
 }
 
 static GtkWidget *create_apps_list (const gchar **command_fmt)
@@ -804,6 +666,96 @@ static void add_mime (GtkWidget *self, gpointer data)
 	g_free (command);
 }
 
+static void save_recently_used (char *file, char *mime_type)
+{
+	xmlDocPtr doc;
+	xmlNodePtr node, content, root, tmp, set_node;
+	char *docname, *home;
+	int fd;
+	gboolean set = FALSE;
+	time_t t;
+	char *uri;
+	char tm[32];
+
+	home = getenv ("HOME");
+	docname = g_build_path ("/", home, ".recently-used", NULL);
+
+	fd = open (docname, O_RDONLY);
+	lockf (fd, F_LOCK, 0);
+
+	doc = xmlParseFile(docname);
+
+	root = xmlDocGetRootElement (doc);
+	for (node = root->children; node && !set; node = node->next) {
+/* 		if (xmlStrEqual (node->name, "RecentItem")) { */
+		for (content = node->children; content; content = content->next) {
+			if (xmlStrEqual (content->name, "URI")) {
+				char *name;
+
+				name = xmlNodeListGetString
+					(doc, content->xmlChildrenNode, 1);
+				if (!((strncmp ("file://", name, 7) == 0)
+				      && (strcmp (name + 7, file) == 0))) {
+					if (name) {
+						xmlFree (name);
+					}
+					continue;
+				}
+				tmp = node->children;
+				while (tmp) {
+					if (xmlStrEqual (tmp->name, "Timestamp")) {
+						xmlUnlinkNode (tmp);
+						xmlFreeNode (tmp);
+						tmp = NULL;
+							
+						t = time (NULL);
+						sprintf (tm, "%d", t);
+						xmlNewTextChild
+							(node, NULL, "Timestamp", tm);
+					}
+					if (tmp) {
+						tmp = tmp->next;
+					}
+				}
+				set = TRUE;
+				set_node = node;
+				//}
+
+				if (name) {
+					xmlFree (name);
+				}
+			}
+		}
+/* 		} */
+	}
+
+	if (!set) {
+		content = xmlNewNode (NULL, "RecentItem");
+
+		uri = g_strjoin ("", "file://", file, NULL);
+		xmlNewTextChild (content, NULL, "URI", uri);
+		g_free (uri);
+
+		xmlNewTextChild (content, NULL, "Mime-Type", mime_type);
+
+		t = time (NULL);
+		sprintf (tm, "%d", t);
+		xmlNewTextChild (content, NULL, "Timestamp", tm);
+
+		xmlAddPrevSibling (root->children, content);
+	} else {
+		xmlUnlinkNode (set_node);
+		xmlAddPrevSibling (root->children, set_node);
+	}
+
+	xmlSaveFormatFile (docname, doc, 1);
+	g_free (docname);
+	xmlFreeDoc(doc);
+
+	lockf (fd, F_ULOCK, 0);
+	close (fd);
+}
+
 static void open_file (FsBrowser *browser, char *path, gboolean from_menu)
 {
 	const gchar **commands = NULL, *file = NULL;
@@ -955,12 +907,11 @@ static void open_file (FsBrowser *browser, char *path, gboolean from_menu)
 						(commands[id], file, FALSE, FALSE);
 				}
 
-				browser->recent_files = add_recent_file
-					(browser->recent_files, file);
-
 				if (!browser->active) {
 					show_recent_files (browser);
 				}
+
+				save_recently_used (file, MIME_get_type (file, FALSE));
 
 				xfce_exec (command, FALSE, FALSE, NULL);
 			}
@@ -1008,12 +959,11 @@ static void open_file (FsBrowser *browser, char *path, gboolean from_menu)
 				(gtk_entry_get_text (GTK_ENTRY (entry)),
 				 file, FALSE, FALSE);
 
-			browser->recent_files = add_recent_file
-				(browser->recent_files, file);
-
 			if (!browser->active) {
 				show_recent_files (browser);
 			}
+
+			save_recently_used (file, MIME_get_type (file, FALSE));
 
 			xfce_exec (command, FALSE, FALSE, NULL);
 			break;
@@ -1217,7 +1167,7 @@ GtkWidget *fs_browser_new ()
 	}
 
 	browser = GTK_WIDGET (g_object_new (fs_browser_get_type (), NULL));
-	path = (gchar *) getenv ("HOME");
+	path = g_strdup ((gchar *) getenv ("HOME"));
 	strcpy (FS_BROWSER (browser)->path, path);
 	len = strlen (path);
 	if (FS_BROWSER (browser)->path[len - 1] != '/') {
@@ -1228,8 +1178,6 @@ GtkWidget *fs_browser_new ()
 	strcpy (s_path, FS_BROWSER (browser)->path);
 	s_path_len = strlen (s_path);
 	FS_BROWSER (browser)->dot_files = FALSE;
-
-	FS_BROWSER (browser)->recent_files = read_recent_files ();
 
 	return browser;
 }
@@ -1242,8 +1190,6 @@ static void fs_browser_destroy (GtkObject *object)
 	g_return_if_fail (IS_FS_BROWSER (object));
 
 	browser = FS_BROWSER (object);
-
-	write_recent_files (browser->recent_files);
 
 	if (GTK_OBJECT_CLASS (parent_class)->destroy)
 		(* GTK_OBJECT_CLASS (parent_class)->destroy) (object);
@@ -1258,6 +1204,7 @@ void fs_browser_show (FsBrowser *browser, FsBrowserViewType type)
 			gtk_toggle_button_set_active
 				(GTK_TOGGLE_BUTTON (browser->togglerecent), TRUE);
 		}
+		show_recent_files (browser);
 		break;
 	case FILE_BROWSER:
 		if (!browser->active) {

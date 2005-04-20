@@ -278,10 +278,18 @@ static void update_model (FsTabWidget *ft)
 	model = gtk_icon_view_get_model (GTK_ICON_VIEW (ft->view));
 
 	if (gtk_tree_model_get_iter_first (model, &iter)) {
+		char *path = NULL;
 
 		file = fopen ("/etc/mtab", "r");
 		if (!file) {
-			return;
+			char *command;
+
+			path = ms_get_save_file ("mtab");
+			command = g_strjoin (" ", "mount -p >", path, NULL);
+			system (command); /* FIXME!!! */
+			//xfce_exec (command, FALSE, FALSE, NULL);
+			file = fopen (path, "r");
+			g_free (command);
 		}
 
 		while (fgets (line, 4096, file)) {
@@ -292,6 +300,11 @@ static void update_model (FsTabWidget *ft)
 		}
 
 		fclose (file);
+
+		if (path) {
+			unlink (path);
+			g_free (path);
+		}
 
 		do {
 			char *state;

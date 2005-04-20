@@ -59,8 +59,6 @@ typedef struct _FsBrowser {
 	gchar *dir_icon;
 	GdkPixbuf *dir_pixbuf;
 	gboolean dot_files;
-
-	GList *recent_files;
 } FsBrowser;
 
 GType fs_browser_get_type ();
