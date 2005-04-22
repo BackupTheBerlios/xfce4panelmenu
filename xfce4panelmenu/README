@@ -1,41 +1,75 @@
+Xfce4 Panel Menu plugin provides to Xfce4 panel menu similar to MenuStart from
+WindowsXP, however it differ much from it.
+
+REQUIREMENTS: Gtk+ 2.6.x, Xfce-4.2, libxml2
+
+MENU:
+
+Menu is divided into three parts:
+
+first with applications menu and most often used apps is placed in the
+	first column, apps menu uses menu file placed in
+	"$HOME/.config/xfce4/menustart/menu.xml" whuch has the same
+	format as root menu from Xfdesktop. By now including
+	menus from external file and system menu are not supported.
+	In Properities dialog it is possible to set up number of items
+	to show in "most often used apps" menu.
+
+second labeled as "Extensions" gives access to files browser and device
+	mounter (see below) and is placed at bottom of the second column
+
+third labeled as "User shortcuts" contains shortcuts for applications
+	that you want start fast without looking for it in menu.
+	This part is placed in columns from 2 to 6. You can edit it
+	from Properities dialog or by editing
+	"$HOME/.config/xfce4/menustart/userapps.xml" directly. Configuration
+	file has the same format:
+	
+	1 Column--+
+		  +-- app
+		  +-- app
+		  +-- app
+		  +-- app
+	2 Column--+
+		  +-- app
+		  +-- app
+		  +-- app
+		  +-- app
+	...
+	5 Column--+
+		  +-- app
+		  +-- app
+		  +-- app
+		  +-- app
+
+	all entries other then "menu" on the first level are ignored and
+	all entries other then "app" on the second level are ignored
+	(if you were using earlier versions of this panel you will have to
+	redefine this menu, otherwise you will see blank columns in menu)
+
+Number of columns can be set in Properites dialog as number in 2..6,
+3, 4, 5, 6 columns are used for "User shortcuts".
+If the column is to small to show all entries in "recent apps"
+or in "User shortcuts" you can scroll it with mouse wheel.
+
+MOUNTER:
+
+Mounter lets you mount and unmount devices listed in your /etc/fstab.
+/etc/mtab or -p option in your mount command is reqired for this component
+to work properly.
+
+FILES BROWSER
+
+Files browser lets you open files quickly with desired application, for
+determination which app to run it uses Xfce4 mime modules or application
+defined by user (e.g. rox). For determination mime-types Xfce4 mime module
+is used.
+This component give also possibility to look in the list of recently opend
+files. For this file "$HOME/.recently-used" is used as described in
+freedesktop.org standard.
+
 INSTALL:
 
-	./configure
-	make
-	make install (as root)
-
-
-DESC :
-
-	+---------------------------------------------------------------+
-	|				|				|
-	|				|				|
-	|Recently used applications	|User defined applications	|
-	|menu				| 				|
-	|				|        			|
-	|				|				|
-	|				|				|
-	|				|				|
-	|				|				|
-	|				|				|
-	|				|				|
-	|				|				|
-	|				|				|
-	|				|				|
-	|				|				|
-	|				|				|
-	|				|				|
-	|				|				|
-	|				|				|
-	|				|				|
-	|				|-------------------------------|
-	|				|				|
-	|				|				|
-	|-------------------------------|				|
-	|Applications menu :		|				|
-	|Use the same format as xfdesk- |self explaining		|
-	|top root, so you can copy this	|				|
-	|menu to ~/.config/xfce4/menu-	|				|
-	|start/menu.xml   		|				|
-	|				|				|
-	+---------------------------------------------------------------+
+./configure
+make
+make install (as root)
