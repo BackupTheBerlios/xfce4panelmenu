@@ -213,6 +213,12 @@ static GtkTreeModel *create_model (FsTabWidget *ft)
 				continue;
 			}
 
+			if ((strcmp (fs, "swap") == 0)
+			    || (strcmp (fs, "proc") == 0)
+			    || (strcmp (fs, "devpts") == 0)) {
+				continue;
+			}
+
 			gtk_list_store_append (list, &iter);
 
 			if (strcmp (fs, "iso9660") == 0) {
