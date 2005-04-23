@@ -173,81 +173,6 @@ static gboolean scroll_box (GtkWidget *self, GdkEventScroll *event, gpointer dat
 
 /******************************************************************************************/
 
-typedef enum {
-	TOPLEVEL,
-	MENU,
-	MENUITEM
-} DesktopEntryType;
-
-struct DesktopEntry {
-	GtkWidget *widget;
-	DesktopEntryType type;
-	XfceDesktopEntry *entry;
-	GHashTable *child;
-};
-
-static char *desk_paths[] = {"/usr/share/applications/", "/usr/local/share/applications/"};
-
-static char *cats[] = {
-	"Categories",
-	"Icon",
-	"Exec",
-	"Name",
-	"GenericName",
-	"Comment",
-	"OnlyShowIn"
-};
-static int cat_num = 7;
-
-
-
-GHashTable *create_menu_image ()
-{
-
-}
-
-GtkWidget *create_menu_from_image (GHashTable *image, gchar *key)
-{
-	GtkWidget *menu;
-
-	return menu;
-}
-
-void test ()
-{
-	XfceDesktopEntry *entry;
-	gchar *value;
-
-	printf ("\ntest output\n");
-
-	entry = xfce_desktop_entry_new ("/usr/share/applications/gqview.desktop", cats, cat_num);
-	if (entry) {
-		if (xfce_desktop_entry_get_string (entry, "Categories", FALSE, &value)) {
-			printf ("Categories=%s\n", value);
-		}
-		if (xfce_desktop_entry_get_string (entry, "Icon", FALSE, &value)) {
-			printf ("Icon=%s\n", value);
-		}
-		if (xfce_desktop_entry_get_string (entry, "Exec", FALSE, &value)) {
-			printf ("Exec=%s\n", value);
-		}
-		if (xfce_desktop_entry_get_string (entry, "Name", FALSE, &value)) {
-			printf ("Name=%s\n", value);
-		}
-		if (xfce_desktop_entry_get_string (entry, "GenericName", TRUE, &value)) {
-			printf ("GenericName=%s\n", value);
-		}
-		if (xfce_desktop_entry_get_string (entry, "Comment", TRUE, &value)) {
-			printf ("Comment=%s\n", value);
-		}
-	} else {
-		printf ("something wrong\n");
-	}
-	printf ("\ntest output end\n");
-}
-
-/******************************************************************************************/
-
 int rec_apps_cmp (gconstpointer a, gconstpointer b)
 {
 	struct rec_app *A = (struct rec_app *) a;
@@ -705,7 +630,7 @@ static void private_cb_label_style_set (GtkWidget * widget, GtkStyle * old_style
 
 GtkWidget *create_menu_header (gchar *title)
 {
-	GtkLabel *label;
+	GtkWidget *label;
 	GtkStyle *style, *labelstyle;
 	GtkWidget *box;
 

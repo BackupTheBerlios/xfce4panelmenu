@@ -28,6 +28,7 @@
 
 #include <libxfce4util/i18n.h>
 #include <libxfcegui4/xfce-exec.h>
+#include <libxfcegui4/libxfcegui4.h>
 
 #include "fstab.h"
 #include "common.h"
@@ -451,7 +452,7 @@ static void mount_button_click (GtkWidget *self, gpointer data)
 		}
 	}
 
-	g_list_foreach (selected, gtk_tree_path_free, NULL);
+	g_list_foreach (selected, (GFunc) gtk_tree_path_free, NULL);
 	g_list_free (selected);
 }
 

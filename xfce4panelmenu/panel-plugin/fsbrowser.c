@@ -39,6 +39,7 @@
 #include <libxfce4util/i18n.h>
 #include <xfce4-modules/mime.h>
 #include <xfce4-modules/mime_icons.h>
+#include <libxfcegui4/libxfcegui4.h>
 
 #include "fsbrowser.h"
 #include "common.h"
@@ -183,24 +184,7 @@ xfmime_icon_functions *load_mime_icon_module ()
 	return xfmime_icon_fun;
 }
 
-gboolean clear_row_pixbuf (GtkTreeModel *model,
-			   GtkTreePath *path, GtkTreeIter *iter,
-			   gpointer data)
-{
-	GdkPixbuf *pixbuf;
-
-	gtk_tree_model_get (model, ICON_COLUMN, &pixbuf);
-	g_object_unref (G_OBJECT (pixbuf));
-
-	return TRUE;
-}
-
-void clear_model (GtkTreeModel *model) {
-	gtk_tree_model_foreach (model, clear_row_pixbuf, NULL);
-	gtk_list_store_clear (GTK_LIST_STORE (model));
-}
-
-GdkPixbuf *get_mime_icon (gchar *mime_desc) {
+GdkPixbuf *get_mime_icon (const gchar *mime_desc) {
 	GdkPixbuf *ppixbuf = NULL, *pixbuf = NULL;
 	gchar *file, **end;
 
@@ -671,7 +655,7 @@ static void add_mime (GtkWidget *self, gpointer data)
 	g_free (command);
 }
 
-static void save_recently_used (char *file, char *mime_type)
+static void save_recently_used (char *file)
 {
 	xmlDocPtr doc;
 	xmlNodePtr node, content, root, tmp, set_node;
@@ -681,6 +665,9 @@ static void save_recently_used (char *file, char *mime_type)
 	time_t t;
 	char *uri;
 	char tm[32];
+	const char *mime_type;
+
+	mime_type = MIME_get_type (file, FALSE);
 
 	home = getenv ("HOME");
 	docname = g_build_path ("/", home, ".recently-used", NULL);
@@ -763,7 +750,8 @@ static void save_recently_used (char *file, char *mime_type)
 
 static void open_file (FsBrowser *browser, char *path, gboolean from_menu)
 {
-	const gchar **commands = NULL, *file = NULL;
+	const gchar **commands = NULL;
+	gchar *file = NULL;
 
 	if (browser->active && !from_menu)
 		file = g_strjoin ("", s_path, path, NULL);
@@ -916,9 +904,14 @@ static void open_file (FsBrowser *browser, char *path, gboolean from_menu)
 					show_recent_files (browser);
 				}
 
-				save_recently_used (file, MIME_get_type (file, FALSE));
+				save_recently_used (file);
 
-				xfce_exec (command, FALSE, FALSE, NULL);
+				xfce_exec (command,
+					   gtk_toggle_button_get_active
+					   (GTK_TOGGLE_BUTTON (term)),
+					   gtk_toggle_button_get_active
+					   (GTK_TOGGLE_BUTTON (startup)),
+					   NULL);
 			}
 			break;
 
@@ -968,7 +961,7 @@ static void open_file (FsBrowser *browser, char *path, gboolean from_menu)
 				show_recent_files (browser);
 			}
 
-			save_recently_used (file, MIME_get_type (file, FALSE));
+			save_recently_used (file);
 
 			xfce_exec (command, FALSE, FALSE, NULL);
 			break;
