@@ -1,3 +1,7 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <stdio.h>
 
 #include <gtk/gtk.h>
@@ -8,6 +12,8 @@
 
 #include <panel/plugins.h>
 #include <panel/xfce.h>
+
+#include <locale.h>
 
 #include "menustart.h"
 #include "menu.h"
@@ -312,14 +318,14 @@ GtkWidget *init_browser_page (Control *ctrl)
 	table = gtk_table_new (6, 3, TRUE);
 
 	ms->mime_check = gtk_check_button_new_with_label
-		("Get MIME information when reading directory");
+		(_("Get MIME information when reading directory"));
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
 				      (ms->mime_check), browser->mime_check);
 	gtk_table_attach (GTK_TABLE (table), ms->mime_check, 1, 3, 0, 1,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
 
 	ms->mime_builtin = gtk_radio_button_new_with_label
-		(NULL, "Use Xfce4 MIME-type module when opening files");
+		(NULL, _("Use Xfce4 MIME-type module when opening files"));
 	if (!browser->mime_command) {
 		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (ms->mime_builtin), TRUE);
 	}
@@ -327,7 +333,7 @@ GtkWidget *init_browser_page (Control *ctrl)
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
 
 	ms->mime_outside = gtk_radio_button_new_with_label_from_widget
-		(GTK_RADIO_BUTTON (ms->mime_builtin), "or use external program (e.g. rox):");
+		(GTK_RADIO_BUTTON (ms->mime_builtin), _("or use external program (e.g. rox):"));
 	gtk_table_attach (GTK_TABLE (table), ms->mime_outside, 0, 2, 2, 3,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
 
@@ -371,7 +377,7 @@ GtkWidget *init_general_page (Control *ctrl)
 	table = gtk_table_new (4, 3, TRUE);
 
 
-	label = gtk_label_new ("Items count in recent apps menu");
+	label = gtk_label_new (_("Items count in recent apps menu"));
 	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
 	gtk_table_attach (GTK_TABLE (table), label, 0, 2, 0, 1,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
@@ -384,7 +390,7 @@ GtkWidget *init_general_page (Control *ctrl)
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
 
 
-	label = gtk_label_new ("Switch User Command");
+	label = gtk_label_new (_("Switch User Command"));
 	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
 	gtk_table_attach (GTK_TABLE (table), label, 0, 1, 1, 2,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
@@ -394,7 +400,7 @@ GtkWidget *init_general_page (Control *ctrl)
 	gtk_table_attach (GTK_TABLE (table), ms->switch_entry, 1, 3, 1, 2,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
 
-	label = gtk_label_new ("Lock Screen Command");
+	label = gtk_label_new (_("Lock Screen Command"));
 	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
 	gtk_table_attach (GTK_TABLE (table), label, 0, 1, 2, 3,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
@@ -404,13 +410,13 @@ GtkWidget *init_general_page (Control *ctrl)
 	gtk_table_attach (GTK_TABLE (table), ms->lock_entry, 1, 3, 2, 3,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
 
-	ms->show_header = gtk_check_button_new_with_label ("Show Header");
+	ms->show_header = gtk_check_button_new_with_label (_("Show Header"));
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (ms->show_header),
 				      MENU_START (((struct menu_start *) ctrl->data)->menustart)->show_header);
 	gtk_table_attach (GTK_TABLE (table), ms->show_header, 0, 1, 3, 4,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
 
-	ms->show_footer = gtk_check_button_new_with_label ("Show Footer");
+	ms->show_footer = gtk_check_button_new_with_label (_("Show Footer"));
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (ms->show_footer),
 				      MENU_START (((struct menu_start *) ctrl->data)->menustart)->show_footer);
 	gtk_table_attach (GTK_TABLE (table), ms->show_footer, 1, 2, 3, 4,
@@ -420,7 +426,7 @@ GtkWidget *init_general_page (Control *ctrl)
 
 	table = gtk_table_new (1, 3, TRUE);
 
-	button = gtk_button_new_with_label ("Edit Applications Menu");
+	button = gtk_button_new_with_label (_("Edit Applications Menu"));
 	g_signal_connect_after (G_OBJECT (button),
 				"clicked",
 				G_CALLBACK (edit_apps_menu),
@@ -428,7 +434,7 @@ GtkWidget *init_general_page (Control *ctrl)
 	gtk_table_attach (GTK_TABLE (table), button, 1, 2, 0, 1,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
 
-	button = gtk_button_new_with_label ("Edit User Apps");
+	button = gtk_button_new_with_label (_("Edit User Apps"));
 	g_signal_connect_after (G_OBJECT (button),
 				"clicked",
 				G_CALLBACK (edit_user_apps_menu),
@@ -436,7 +442,7 @@ GtkWidget *init_general_page (Control *ctrl)
 	gtk_table_attach (GTK_TABLE (table), button, 2, 3, 0, 1,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
 
-	label = gtk_label_new ("Size (width x height)");
+	label = gtk_label_new (_("Size (width x height)"));
 	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
 	gtk_table_attach (GTK_TABLE (table), label, 0, 1, 1, 2,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
@@ -456,7 +462,7 @@ GtkWidget *init_general_page (Control *ctrl)
 	gtk_table_attach (GTK_TABLE (table), ms->height_spin, 2, 3, 1, 2,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
 
-	label = gtk_label_new ("Columns");
+	label = gtk_label_new (_("Columns"));
 	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
 	gtk_table_attach (GTK_TABLE (table), label, 0, 1, 2, 3,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
@@ -544,7 +550,7 @@ menustart_create_options (Control *ctrl, GtkContainer *con, GtkWidget *done)
 	vbox = init_general_page (ctrl);
 	gtk_notebook_append_page (GTK_NOTEBOOK (notebook), vbox, label);
 
-	label = gtk_label_new ("Files Browser");
+	label = gtk_label_new (_("Files Browser"));
 	vbox = init_browser_page (ctrl);
 	gtk_notebook_append_page (GTK_NOTEBOOK (notebook), vbox, label);
 
@@ -662,7 +668,7 @@ write_conf (Control *control, xmlNodePtr node)
 	xmlSetProp(node, (const xmlChar *) "recent_app_count", count);
 
 	sprintf (count, "%d", MENU_START (ms->menustart)->show_header);
-	xmlSetProp(node, (const xmlChar *) _("show_header"), count);
+	xmlSetProp(node, (const xmlChar *) "show_header", count);
 
 	sprintf (count, "%d", MENU_START (ms->menustart)->show_footer);
 	xmlSetProp(node, (const xmlChar *) "show_footer", count);
@@ -691,6 +697,8 @@ write_conf (Control *control, xmlNodePtr node)
 G_MODULE_EXPORT void xfce_control_class_init (ControlClass *cc)
 {
 	xfce_textdomain (GETTEXT_PACKAGE, PACKAGE_LOCALE_DIR, "UTF-8");
+
+	printf ("%s\n", dgettext ("xfce4-panel-menu", "General"));
 
 	cc->name = "menustart";
 	cc->caption = _("Xfce4 Panel Menu");

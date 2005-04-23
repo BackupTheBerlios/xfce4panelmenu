@@ -1,0 +1,5 @@
+panel-plugin/fsbrowser.c
+panel-plugin/fstab.c
+panel-plugin/main.c
+panel-plugin/menu.c
+panel-plugin/menustart.c

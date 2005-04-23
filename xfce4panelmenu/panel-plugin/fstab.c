@@ -14,6 +14,10 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -22,6 +26,7 @@
 
 #include <gtk/gtk.h>
 
+#include <libxfce4util/i18n.h>
 #include <libxfcegui4/xfce-exec.h>
 
 #include "fstab.h"
@@ -143,17 +148,17 @@ static void fs_tab_init (FsTabWidget *ft)
 
 	hbox = gtk_hbox_new (TRUE, 0);
 
-	button = menu_start_create_button ("gtk-harddisk", "Mount/Unmount", NULL, NULL);
+	button = menu_start_create_button ("gtk-harddisk", _("Mount/Unmount"), NULL, NULL);
 	g_signal_connect (G_OBJECT (button), "clicked",
 			  G_CALLBACK (mount_button_click), ft);
 	gtk_box_pack_start (GTK_BOX (hbox), button, TRUE, TRUE, 0);
 
-	button = menu_start_create_button ("gtk-refresh", "Reload fstab", NULL, NULL);
+	button = menu_start_create_button ("gtk-refresh", _("Reload fstab"), NULL, NULL);
 	g_signal_connect (G_OBJECT (button), "clicked",
 			  G_CALLBACK (reload_fstab), ft);
 	gtk_box_pack_start (GTK_BOX (hbox), button, TRUE, TRUE, 0);
 
-	ft->closebutton = menu_start_create_button ("gtk-close", "Close", NULL, NULL);
+	ft->closebutton = menu_start_create_button ("gtk-close", _("Close"), NULL, NULL);
 	gtk_box_pack_start (GTK_BOX (hbox), ft->closebutton, TRUE, TRUE, 0);
 
 	gtk_box_pack_start (GTK_BOX (ft), hbox, FALSE, FALSE, 0);
@@ -350,11 +355,11 @@ static void update_model (FsTabWidget *ft)
 			}
 			markup = g_strjoin
 				("",
-				 "<i><tt>dev  :   </tt></i><b>", mdev, "</b>\n",
-				 "<i><tt>dir  :   </tt></i><b>", path, "</b>\n",
-				 "<i><tt>fs   :   </tt></i>", fs, "\n",
-				 "<i><tt>opt  :   </tt></i>", opt, "\n",
-				 "<i><tt>state:   </tt></i><i>", state, "</i>\n",
+				 "<i><tt>", _("dev  :"), "   </tt></i><b>", mdev, "</b>\n",
+				 "<i><tt>", _("dir  :"), "   </tt></i><b>", path, "</b>\n",
+				 "<i><tt>", _("fs   :"), "   </tt></i>", fs, "\n",
+				 "<i><tt>", _("opt  :"), "   </tt></i>", opt, "\n",
+				 "<i><tt>", _("state:"), "   </tt></i><i>", state, "</i>\n",
 				 NULL);
 			g_free (state);
 

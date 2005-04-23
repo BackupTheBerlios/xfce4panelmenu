@@ -14,6 +14,10 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -32,6 +36,7 @@
 
 #include <gmodule.h>
 
+#include <libxfce4util/i18n.h>
 #include <xfce4-modules/mime.h>
 #include <xfce4-modules/mime_icons.h>
 
@@ -804,7 +809,7 @@ static void open_file (FsBrowser *browser, char *path, gboolean from_menu)
 		view = create_apps_list (commands);
 
 		dialog = gtk_dialog_new_with_buttons
-			("Choose Application", NULL, GTK_DIALOG_MODAL,
+			(_("Choose Application"), NULL, GTK_DIALOG_MODAL,
 			 GTK_STOCK_OK, GTK_RESPONSE_ACCEPT,
 			 GTK_STOCK_CANCEL, GTK_RESPONSE_REJECT,
 			 NULL);
@@ -812,7 +817,7 @@ static void open_file (FsBrowser *browser, char *path, gboolean from_menu)
 		pixbuf = gdk_pixbuf_new_from_file_at_size
 			(ICONDIR "/xfce4_xicon2.png", 32, 32, NULL);
 
-		header = create_header (pixbuf, "Choose Application");
+		header = create_header (pixbuf, _("Choose Application"));
 		gtk_box_pack_start (GTK_BOX (GTK_DIALOG (dialog)->vbox),
 				    header, FALSE, FALSE, 2);
 
@@ -844,11 +849,11 @@ static void open_file (FsBrowser *browser, char *path, gboolean from_menu)
 		vbox_mini = gtk_vbox_new (TRUE, 5);
 		gtk_container_set_border_width (GTK_CONTAINER (vbox_mini), 5);
 
-		term = gtk_check_button_new_with_label ("Open in terminal");
+		term = gtk_check_button_new_with_label (_("Open in terminal"));
 		gtk_box_pack_start (GTK_BOX (vbox_mini), term, FALSE, FALSE, 0);
 
 
-		startup = gtk_check_button_new_with_label ("Use startup notification");
+		startup = gtk_check_button_new_with_label (_("Use startup notification"));
 		gtk_box_pack_start (GTK_BOX (vbox_mini), startup, FALSE, FALSE, 0);
 
 		gtk_container_add (GTK_CONTAINER (frame), vbox_mini);
@@ -934,12 +939,12 @@ static void open_file (FsBrowser *browser, char *path, gboolean from_menu)
 		g_signal_emit_by_name (browser, "completed");
 
 		dialog = gtk_dialog_new_with_buttons
-			("Choose Application", NULL, GTK_DIALOG_MODAL,
+			(_("Choose Application"), NULL, GTK_DIALOG_MODAL,
 			 GTK_STOCK_OK, GTK_RESPONSE_ACCEPT,
 			 GTK_STOCK_CANCEL, GTK_RESPONSE_REJECT,
 			 NULL);
 
-		message = g_strjoin ("", "Open file \"", path, "\" with:", NULL);
+		message = g_strjoin ("", _("Open file"), " \"", path, "\" ", _("with:"), NULL);
 		label = gtk_label_new (message);
 		g_free (message);
 		gtk_box_pack_start (GTK_BOX (GTK_DIALOG (dialog)->vbox),
@@ -1082,19 +1087,19 @@ fs_browser_init (FsBrowser * fb)
 
 	hbox = gtk_hbox_new (TRUE, 0);
 
-	button = menu_start_create_button ("gtk-home", "Home", NULL, NULL);
+	button = menu_start_create_button ("gtk-home", _("Home"), NULL, NULL);
 	g_signal_connect_after (G_OBJECT (button), "clicked",
 				G_CALLBACK (go_home_dir), fb);
 	gtk_box_pack_start (GTK_BOX (hbox), button, TRUE, TRUE, 0);
 
-	button = menu_start_create_button ("gtk-harddisk", "Root", NULL, NULL);
+	button = menu_start_create_button ("gtk-harddisk", _("Root"), NULL, NULL);
 	g_signal_connect_after (G_OBJECT (button), "clicked",
 				G_CALLBACK (go_root_dir), fb);
 	gtk_box_pack_start (GTK_BOX (hbox), button, TRUE, TRUE, 0);
 
 	gtk_box_pack_start (GTK_BOX (fb), hbox, FALSE, FALSE, 0);
 
-	fb->togglerecent = create_toggle_button ("gtk-index", "Recent files",
+	fb->togglerecent = create_toggle_button ("gtk-index", _("Recent files"),
 						 G_CALLBACK (rfiles_toggled), fb);
 	gtk_box_pack_start (GTK_BOX (hbox), fb->togglerecent, TRUE, TRUE, 0);
 
@@ -1126,17 +1131,17 @@ fs_browser_init (FsBrowser * fb)
 
 	hbox = gtk_hbox_new (TRUE, 0);
 
-	button = menu_start_create_button ("gtk-convert", "show/hide .files", NULL, fb);
+	button = menu_start_create_button ("gtk-convert", _("show/hide .files"), NULL, fb);
 	g_signal_connect_after (G_OBJECT (button), "clicked",
 				G_CALLBACK (switch_dot_files), fb);
 	gtk_box_pack_start (GTK_BOX (hbox), button, TRUE, TRUE, 0);
 
-	button = menu_start_create_button ("gtk-go-up", "Up directory", NULL, fb);
+	button = menu_start_create_button ("gtk-go-up", _("Up directory"), NULL, fb);
 	g_signal_connect_after (G_OBJECT (button), "clicked",
 				G_CALLBACK (go_up_dir), fb);
 	gtk_box_pack_start (GTK_BOX (hbox), button, TRUE, TRUE, 0);
 
-	fb->closebutton = menu_start_create_button ("gtk-close", "Close", NULL, fb);
+	fb->closebutton = menu_start_create_button ("gtk-close", _("Close"), NULL, fb);
 	gtk_box_pack_start (GTK_BOX (hbox), fb->closebutton, TRUE, TRUE, 0);
 
 	gtk_box_pack_start (GTK_BOX (fb), hbox, FALSE, FALSE, 0);

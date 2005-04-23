@@ -4,7 +4,7 @@ EXTRA_DIST =								\
 	xfce4-menustart-plugin.spec                                         \
 	NOTES
 
-SUBDIRS = panel-plugin pixmaps
+SUBDIRS = panel-plugin po pixmaps
 
 distclean-local:
 	rm -rf *.cache *~ *.spec

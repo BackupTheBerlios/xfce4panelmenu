@@ -1,0 +1,204 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2005-04-23 10:33+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: panel-plugin/fsbrowser.c:811 panel-plugin/fsbrowser.c:819
+#: panel-plugin/fsbrowser.c:941
+msgid "Choose Application"
+msgstr ""
+
+#: panel-plugin/fsbrowser.c:851
+msgid "Open in terminal"
+msgstr ""
+
+#: panel-plugin/fsbrowser.c:855
+msgid "Use startup notification"
+msgstr ""
+
+#: panel-plugin/fsbrowser.c:946
+msgid "Open file"
+msgstr ""
+
+#: panel-plugin/fsbrowser.c:946
+msgid "with:"
+msgstr ""
+
+#: panel-plugin/fsbrowser.c:1089
+msgid "Home"
+msgstr ""
+
+#: panel-plugin/fsbrowser.c:1094
+msgid "Root"
+msgstr ""
+
+#: panel-plugin/fsbrowser.c:1101
+msgid "Recent files"
+msgstr ""
+
+#: panel-plugin/fsbrowser.c:1133
+msgid "show/hide .files"
+msgstr ""
+
+#: panel-plugin/fsbrowser.c:1138
+msgid "Up directory"
+msgstr ""
+
+#: panel-plugin/fsbrowser.c:1143 panel-plugin/fstab.c:160
+msgid "Close"
+msgstr ""
+
+#: panel-plugin/fstab.c:150
+msgid "Mount/Unmount"
+msgstr ""
+
+#: panel-plugin/fstab.c:155
+msgid "Reload fstab"
+msgstr ""
+
+#: panel-plugin/fstab.c:357
+msgid "dev  :"
+msgstr ""
+
+#: panel-plugin/fstab.c:358
+msgid "dir  :"
+msgstr ""
+
+#: panel-plugin/fstab.c:359
+msgid "fs   :"
+msgstr ""
+
+#: panel-plugin/fstab.c:360
+msgid "opt  :"
+msgstr ""
+
+#: panel-plugin/fstab.c:361
+msgid "state:"
+msgstr ""
+
+#: panel-plugin/main.c:321
+msgid "Get MIME information when reading directory"
+msgstr ""
+
+#: panel-plugin/main.c:328
+msgid "Use Xfce4 MIME-type module when opening files"
+msgstr ""
+
+#: panel-plugin/main.c:336
+msgid "or use external program (e.g. rox):"
+msgstr ""
+
+#: panel-plugin/main.c:380
+msgid "Items count in recent apps menu"
+msgstr ""
+
+#: panel-plugin/main.c:393
+msgid "Switch User Command"
+msgstr ""
+
+#: panel-plugin/main.c:403
+msgid "Lock Screen Command"
+msgstr ""
+
+#: panel-plugin/main.c:413
+msgid "Show Header"
+msgstr ""
+
+#: panel-plugin/main.c:419
+msgid "Show Footer"
+msgstr ""
+
+#: panel-plugin/main.c:429
+msgid "Edit Applications Menu"
+msgstr ""
+
+#: panel-plugin/main.c:437
+msgid "Edit User Apps"
+msgstr ""
+
+#: panel-plugin/main.c:445
+msgid "Size (width x height)"
+msgstr ""
+
+#: panel-plugin/main.c:465
+msgid "Columns"
+msgstr ""
+
+#: panel-plugin/main.c:549 panel-plugin/main.c:701
+msgid "General"
+msgstr ""
+
+#: panel-plugin/main.c:553
+msgid "Files Browser"
+msgstr ""
+
+#: panel-plugin/main.c:704 panel-plugin/menustart.c:388
+#: panel-plugin/menustart.c:392 panel-plugin/menustart.c:456
+msgid "Xfce4 Panel Menu"
+msgstr ""
+
+#: panel-plugin/menu.c:1132
+msgid "Most often used apps"
+msgstr ""
+
+#: panel-plugin/menu.c:1144
+msgid "Applications"
+msgstr ""
+
+#: panel-plugin/menu.c:1157 panel-plugin/menu.c:1188
+msgid "User shortcuts"
+msgstr ""
+
+#: panel-plugin/menu.c:1166
+msgid "Extensions"
+msgstr ""
+
+#: panel-plugin/menu.c:1170
+msgid "Recent Files"
+msgstr ""
+
+#: panel-plugin/menu.c:1174
+msgid "Browse Files"
+msgstr ""
+
+#: panel-plugin/menu.c:1179
+msgid "Mount"
+msgstr ""
+
+#: panel-plugin/menustart.c:113 panel-plugin/menustart.c:183
+#: panel-plugin/menustart.c:215 panel-plugin/menustart.c:578
+msgid "Menu"
+msgstr ""
+
+#: panel-plugin/menustart.c:168
+msgid "Mounter"
+msgstr ""
+
+#: panel-plugin/menustart.c:200 panel-plugin/menustart.c:231
+msgid "File Browser"
+msgstr ""
+
+#: panel-plugin/menustart.c:439
+msgid "Exit"
+msgstr ""
+
+#: panel-plugin/menustart.c:443
+msgid "Lock Screen"
+msgstr ""
+
+#: panel-plugin/menustart.c:447
+msgid "Switch User"
+msgstr ""

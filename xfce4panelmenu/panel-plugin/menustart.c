@@ -14,6 +14,10 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <stdlib.h>
 
 #include <libxfce4util/i18n.h>
@@ -102,10 +106,13 @@ static GtkWidget *create_ms_header (MenuStart *ms)
 	GtkWidget *box;
 	GtkStyle *style, *labelstyle;
 	GtkWidget *hbox;
+	gchar *markup;
 
 	ms->title = gtk_label_new (NULL);
 	gtk_label_set_use_markup (GTK_LABEL (ms->title), TRUE);
-	gtk_label_set_markup (GTK_LABEL (ms->title), "<big><b>Menu</b></big>");
+	markup = g_strjoin ("", "<big><b>", _("Menu"), "</b></big>", NULL);
+	gtk_label_set_markup (GTK_LABEL (ms->title), markup);
+	g_free (markup);
 	ms->menu_image = gtk_image_new_from_stock
 		("gtk-index", GTK_ICON_SIZE_LARGE_TOOLBAR);
 

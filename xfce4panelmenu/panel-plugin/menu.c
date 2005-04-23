@@ -14,6 +14,10 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
@@ -1125,7 +1129,7 @@ GtkWidget *menu_new ()
 
 	menu->rec_app_box = gtk_vbox_new (FALSE, 0);
 
-	menu->app_header = create_menu_header ("Most often used apps");
+	menu->app_header = create_menu_header (_("Most often used apps"));
 	gtk_box_pack_start (GTK_BOX (menu->col_boxes[0]), menu->app_header, FALSE, TRUE, 0);
 
 	repack_rec_apps_buttons (menu);
@@ -1137,7 +1141,7 @@ GtkWidget *menu_new ()
 	separator = gtk_hseparator_new ();
 	gtk_box_pack_start (GTK_BOX (menu->col_boxes[0]), separator, FALSE, FALSE, 1);
 
-	button = create_arrow_button ("gtk-index", "Applications");
+	button = create_arrow_button ("gtk-index", _("Applications"));
 	g_signal_connect (G_OBJECT (button), "clicked",
 			  G_CALLBACK (show_menu), menu);
 	gtk_box_pack_start (GTK_BOX (menu->col_boxes[0]), button, FALSE, FALSE, 0);
@@ -1150,7 +1154,7 @@ GtkWidget *menu_new ()
 
 	menu->col_boxes[1] = gtk_vbox_new (FALSE, 0);
 
-	header = create_menu_header ("User shortcuts");
+	header = create_menu_header (_("User shortcuts"));
 	gtk_box_pack_start (GTK_BOX (menu->col_boxes[1]),
 			    header, FALSE, FALSE, 0);
 
@@ -1159,20 +1163,20 @@ GtkWidget *menu_new ()
 	gtk_box_pack_start (GTK_BOX (menu->col_boxes[1]),
 			    menu->column_scrolls[1], TRUE, TRUE, 0);
 
-	header = create_menu_header ("Extensions");
+	header = create_menu_header (_("Extensions"));
 	gtk_box_pack_start (GTK_BOX (menu->col_boxes[1]), header, FALSE, TRUE, 0);
 
 	menu->recentfilesbutton = menu_start_create_button
-		("gtk-index", "Recent Files", NULL, NULL);
+		("gtk-index", _("Recent Files"), NULL, NULL);
 	gtk_box_pack_start (GTK_BOX (menu->col_boxes[1]), menu->recentfilesbutton, FALSE, FALSE, 0);
 
 	menu->fsbrowserbutton = menu_start_create_button
-		("gtk-open", "Browse Files", NULL, NULL);
+		("gtk-open", _("Browse Files"), NULL, NULL);
 	gtk_box_pack_start (GTK_BOX (menu->col_boxes[1]),
 			    menu->fsbrowserbutton, FALSE, FALSE, 0);
 
 	menu->fstabbutton = menu_start_create_button
-		("gtk-harddisk", "Mount...", NULL, NULL);
+		("gtk-harddisk", _("Mount"), NULL, NULL);
 	gtk_box_pack_start (GTK_BOX (menu->col_boxes[1]),
 			    menu->fstabbutton, FALSE, FALSE, 0);
 
@@ -1181,7 +1185,7 @@ GtkWidget *menu_new ()
 	for (i = 2; i < COLUMNS_COUNT; i++) {
 		menu->col_boxes[i] = gtk_vbox_new (FALSE, 0);
 
-		header = create_menu_header ("User shortcuts");
+		header = create_menu_header (_("User shortcuts"));
 		gtk_box_pack_start (GTK_BOX (menu->col_boxes[i]), header,
 				    FALSE, TRUE, 0);
 
