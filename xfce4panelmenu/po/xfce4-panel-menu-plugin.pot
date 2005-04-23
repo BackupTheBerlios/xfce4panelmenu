@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-04-23 10:33+0200\n"
+"POT-Creation-Date: 2005-04-23 14:59+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,76 +16,84 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: panel-plugin/fsbrowser.c:811 panel-plugin/fsbrowser.c:819
-#: panel-plugin/fsbrowser.c:941
+#: panel-plugin/fsbrowser.c:812 panel-plugin/fsbrowser.c:820
+#: panel-plugin/fsbrowser.c:942
 msgid "Choose Application"
 msgstr ""
 
-#: panel-plugin/fsbrowser.c:851
+#: panel-plugin/fsbrowser.c:852
 msgid "Open in terminal"
 msgstr ""
 
-#: panel-plugin/fsbrowser.c:855
+#: panel-plugin/fsbrowser.c:856
 msgid "Use startup notification"
 msgstr ""
 
-#: panel-plugin/fsbrowser.c:946
+#: panel-plugin/fsbrowser.c:947
 msgid "Open file"
 msgstr ""
 
-#: panel-plugin/fsbrowser.c:946
+#: panel-plugin/fsbrowser.c:947
 msgid "with:"
 msgstr ""
 
-#: panel-plugin/fsbrowser.c:1089
+#: panel-plugin/fsbrowser.c:1090
 msgid "Home"
 msgstr ""
 
-#: panel-plugin/fsbrowser.c:1094
+#: panel-plugin/fsbrowser.c:1095
 msgid "Root"
 msgstr ""
 
-#: panel-plugin/fsbrowser.c:1101
+#: panel-plugin/fsbrowser.c:1102
 msgid "Recent files"
 msgstr ""
 
-#: panel-plugin/fsbrowser.c:1133
+#: panel-plugin/fsbrowser.c:1134
 msgid "show/hide .files"
 msgstr ""
 
-#: panel-plugin/fsbrowser.c:1138
+#: panel-plugin/fsbrowser.c:1139
 msgid "Up directory"
 msgstr ""
 
-#: panel-plugin/fsbrowser.c:1143 panel-plugin/fstab.c:160
+#: panel-plugin/fsbrowser.c:1144 panel-plugin/fstab.c:161
 msgid "Close"
 msgstr ""
 
-#: panel-plugin/fstab.c:150
+#: panel-plugin/fstab.c:151
 msgid "Mount/Unmount"
 msgstr ""
 
-#: panel-plugin/fstab.c:155
+#: panel-plugin/fstab.c:156
 msgid "Reload fstab"
 msgstr ""
 
-#: panel-plugin/fstab.c:357
-msgid "dev  :"
+#: panel-plugin/fstab.c:340
+msgid "mounted"
+msgstr ""
+
+#: panel-plugin/fstab.c:351
+msgid "not mounted"
 msgstr ""
 
 #: panel-plugin/fstab.c:358
-msgid "dir  :"
+msgid "dev  :"
 msgstr ""
 
 #: panel-plugin/fstab.c:359
-msgid "fs   :"
+msgid "dir  :"
 msgstr ""
 
 #: panel-plugin/fstab.c:360
-msgid "opt  :"
+msgid "fs   :"
 msgstr ""
 
 #: panel-plugin/fstab.c:361
+msgid "opt  :"
+msgstr ""
+
+#: panel-plugin/fstab.c:362
 msgid "state:"
 msgstr ""
 

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: xfce4-panel-menu-plugin 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-04-23 10:33+0200\n"
+"POT-Creation-Date: 2005-04-23 14:59+0200\n"
 "PO-Revision-Date: 2005-04-23 10:33+0200\n"
 "Last-Translator:  <radoslaw_pociecha@o2.pl>\n"
 "Language-Team: Polish\n"
@@ -18,78 +18,86 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
 "|| n%100>=20) ? 1 : 2);\n"
 
-#: panel-plugin/fsbrowser.c:811 panel-plugin/fsbrowser.c:819
-#: panel-plugin/fsbrowser.c:941
+#: panel-plugin/fsbrowser.c:812 panel-plugin/fsbrowser.c:820
+#: panel-plugin/fsbrowser.c:942
 msgid "Choose Application"
 msgstr "Wybierz Program"
 
-#: panel-plugin/fsbrowser.c:851
+#: panel-plugin/fsbrowser.c:852
 msgid "Open in terminal"
 msgstr "Otwórz w terminalu"
 
-#: panel-plugin/fsbrowser.c:855
+#: panel-plugin/fsbrowser.c:856
 msgid "Use startup notification"
 msgstr ""
 
-#: panel-plugin/fsbrowser.c:946
+#: panel-plugin/fsbrowser.c:947
 msgid "Open file"
 msgstr "Otwórz plik"
 
-#: panel-plugin/fsbrowser.c:946
+#: panel-plugin/fsbrowser.c:947
 msgid "with:"
 msgstr "używając:"
 
-#: panel-plugin/fsbrowser.c:1089
+#: panel-plugin/fsbrowser.c:1090
 msgid "Home"
 msgstr "Dom"
 
-#: panel-plugin/fsbrowser.c:1094
+#: panel-plugin/fsbrowser.c:1095
 msgid "Root"
 msgstr "Początek"
 
-#: panel-plugin/fsbrowser.c:1101
+#: panel-plugin/fsbrowser.c:1102
 msgid "Recent files"
 msgstr "Ostatnio otwierane pliki"
 
-#: panel-plugin/fsbrowser.c:1133
+#: panel-plugin/fsbrowser.c:1134
 msgid "show/hide .files"
 msgstr "pokaż/ukryj .pliki"
 
-#: panel-plugin/fsbrowser.c:1138
+#: panel-plugin/fsbrowser.c:1139
 msgid "Up directory"
 msgstr "Góra"
 
-#: panel-plugin/fsbrowser.c:1143 panel-plugin/fstab.c:160
+#: panel-plugin/fsbrowser.c:1144 panel-plugin/fstab.c:161
 msgid "Close"
 msgstr "Zamknij"
 
-#: panel-plugin/fstab.c:150
+#: panel-plugin/fstab.c:151
 msgid "Mount/Unmount"
-msgstr "(Za/Od)montuj"
+msgstr "Zamontuj/Odmontuj"
 
-#: panel-plugin/fstab.c:155
+#: panel-plugin/fstab.c:156
 msgid "Reload fstab"
 msgstr "Wczytaj fstab"
 
-#: panel-plugin/fstab.c:357
-msgid "dev  :"
-msgstr ""
+#: panel-plugin/fstab.c:340
+msgid "mounted"
+msgstr "zamontowany"
+
+#: panel-plugin/fstab.c:351
+msgid "not mounted"
+msgstr "nie zamontowany"
 
 #: panel-plugin/fstab.c:358
-msgid "dir  :"
-msgstr ""
+msgid "dev  :"
+msgstr "urządzenie   :"
 
 #: panel-plugin/fstab.c:359
-msgid "fs   :"
-msgstr ""
+msgid "dir  :"
+msgstr "katalog      :"
 
 #: panel-plugin/fstab.c:360
-msgid "opt  :"
-msgstr ""
+msgid "fs   :"
+msgstr "system plików:"
 
 #: panel-plugin/fstab.c:361
+msgid "opt  :"
+msgstr "opcje        :"
+
+#: panel-plugin/fstab.c:362
 msgid "state:"
-msgstr ""
+msgstr "stan         :"
 
 #: panel-plugin/main.c:321
 msgid "Get MIME information when reading directory"
@@ -178,7 +186,7 @@ msgstr "Przeglądaj pliki"
 
 #: panel-plugin/menu.c:1179
 msgid "Mount"
-msgstr "Monter"
+msgstr "Zamontuj urządzenie"
 
 #: panel-plugin/menustart.c:113 panel-plugin/menustart.c:183
 #: panel-plugin/menustart.c:215 panel-plugin/menustart.c:578
@@ -187,7 +195,7 @@ msgstr "Menu"
 
 #: panel-plugin/menustart.c:168
 msgid "Mounter"
-msgstr "Monter użądzeń"
+msgstr "Monter urządzeń"
 
 #: panel-plugin/menustart.c:200 panel-plugin/menustart.c:231
 msgid "File Browser"

@@ -324,7 +324,7 @@ static void update_model (FsTabWidget *ft)
 					    -1);
 			for (tmp = mounted; tmp; tmp = tmp->next) {
 				if (strcmp (mdev, (char *) tmp->data) == 0) {
-					state = g_strdup ("mounted");
+					state = g_strdup (_("mounted"));
 					gtk_list_store_set
 						(GTK_LIST_STORE (model), &iter,
 						 MOUNTED, TRUE,
@@ -337,7 +337,7 @@ static void update_model (FsTabWidget *ft)
 					if (count > 0) {
 						buffer[count] = '\0';
 						if (strcmp ((char *) tmp->data, buffer) == 0) {
-							state = g_strdup ("mounted");
+							state = g_strdup (_("mounted"));
 							gtk_list_store_set
 								(GTK_LIST_STORE (model), &iter,
 								 MOUNTED, TRUE,
@@ -348,18 +348,18 @@ static void update_model (FsTabWidget *ft)
 				}
 			}
 			if (!tmp) {
-				state = g_strdup ("not mounted");
+				state = g_strdup (_("not mounted"));
 				gtk_list_store_set (GTK_LIST_STORE (model), &iter,
 						    MOUNTED, FALSE,
 						    -1);
 			}
 			markup = g_strjoin
 				("",
-				 "<i><tt>", _("dev  :"), "   </tt></i><b>", mdev, "</b>\n",
-				 "<i><tt>", _("dir  :"), "   </tt></i><b>", path, "</b>\n",
-				 "<i><tt>", _("fs   :"), "   </tt></i>", fs, "\n",
-				 "<i><tt>", _("opt  :"), "   </tt></i>", opt, "\n",
-				 "<i><tt>", _("state:"), "   </tt></i><i>", state, "</i>\n",
+				 "<i><tt>", _("dev  :"), " </tt></i><b>", mdev, "</b>\n",
+				 "<i><tt>", _("dir  :"), " </tt></i><b>", path, "</b>\n",
+				 "<i><tt>", _("fs   :"), " </tt></i>", fs, "\n",
+				 "<i><tt>", _("opt  :"), " </tt></i>", opt, "\n",
+				 "<i><tt>", _("state:"), " </tt></i><i>", state, "</i>\n",
 				 NULL);
 			g_free (state);
 
