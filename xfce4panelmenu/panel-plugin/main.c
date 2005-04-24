@@ -466,7 +466,7 @@ GtkWidget *init_general_page (Control *ctrl)
 	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
 	gtk_table_attach (GTK_TABLE (table), label, 0, 1, 2, 3,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
-	ms->columns_spin = gtk_spin_button_new_with_range (2, 12, 1);
+	ms->columns_spin = gtk_spin_button_new_with_range (2, COLUMNS_COUNT, 1);
 	gtk_spin_button_set_increments (GTK_SPIN_BUTTON (ms->columns_spin), 1, 1);
 	gtk_spin_button_set_value (GTK_SPIN_BUTTON (ms->columns_spin),
 				   MENU (menu)->columns);
@@ -697,8 +697,6 @@ write_conf (Control *control, xmlNodePtr node)
 G_MODULE_EXPORT void xfce_control_class_init (ControlClass *cc)
 {
 	xfce_textdomain (GETTEXT_PACKAGE, PACKAGE_LOCALE_DIR, "UTF-8");
-
-	printf ("%s\n", dgettext ("xfce4-panel-menu", "General"));
 
 	cc->name = "menustart";
 	cc->caption = _("Xfce4 Panel Menu");
