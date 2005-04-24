@@ -119,7 +119,7 @@ GType scrolled_box_get_type ()
 
 static void scrolled_box_class_init (ScrolledBoxClass* klass)
 {
-
+	GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (klass);
 }
 
 static void scrolled_box_init (ScrolledBox* sb)
