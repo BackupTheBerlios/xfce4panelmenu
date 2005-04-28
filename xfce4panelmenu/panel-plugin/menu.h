@@ -49,6 +49,36 @@ GtkWidget *scrolled_box_new (GtkWidget *child);
 
 /*******************************************************************************/
 
+#define BOX_MENU_TYPE            (box_menu_get_type ())
+#define BOX_MENU(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj),\
+                            BOX_MENU_TYPE, BoxMenu))
+#define BOX_MENU_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),\
+                            BOX_MENU_TYPE, BoxMenuClass))
+#define IS_BOX_MENU(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj),\
+                            BOX_MENU_TYPE))
+#define IS_BOX_MENU_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),\
+                            BOX_MENU_TYPE))
+
+typedef struct {
+	GtkVBoxClass class;
+} BoxMenuClass;
+
+typedef struct {
+	GtkVBox box;
+
+	GSList *menu;
+
+	GtkWidget *scrolled_box;
+	GtkWidget *menu_box;
+	GtkWidget *header_button;
+} BoxMenu;
+
+GType box_menu_get_type ();
+GtkWidget *box_menu_new (GSList *menu);
+void *box_menu_root (BoxMenu *bm);
+
+/*******************************************************************************/
+
 #define MENU_TYPE            (menu_get_type ())
 #define MENU(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj),\
                             MENU_TYPE, Menu))

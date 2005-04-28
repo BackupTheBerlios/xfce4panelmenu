@@ -173,6 +173,62 @@ static gboolean scroll_box (GtkWidget *self, GdkEventScroll *event, gpointer dat
 
 /******************************************************************************************/
 
+static void box_menu_class_init (BoxMenuClass* klass);
+static void box_menu_init (BoxMenu* menu);
+
+GType box_menu_get_type ()
+{
+	static GType type = 0;
+
+	type = g_type_from_name ("BoxMenu");
+
+	if (!type) {
+		static const GTypeInfo info = {
+			sizeof (BoxMenuClass),
+			NULL,
+			NULL,
+			(GClassInitFunc) box_menu_class_init,
+			NULL,
+			NULL,
+			sizeof (BoxMenu),
+			0,
+			(GInstanceInitFunc) box_menu_init,
+		};
+		type = g_type_register_static (GTK_TYPE_VBOX, "BoxMenu", &info,
+					       0);
+	}
+	return type;
+}
+
+static void box_menu_class_init (BoxMenuClass* klass)
+{
+	GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (klass);
+}
+
+static void box_menu_init (BoxMenu* bm)
+{
+	bm->menu_box = gtk_vbox_new (FALSE, 0);
+	bm->scrolled_box = scrolled_box_new (bm->menu_box);
+}
+
+GtkWidget *box_menu_new (GSList *menu)
+{
+	BoxMenu *bm;
+
+	bm = BOX_MENU (g_object_new (box_menu_get_type (), NULL));
+
+	bm->menu = menu;
+
+	return GTK_WIDGET (bm);
+}
+
+void *box_menu_root (BoxMenu *bm)
+{
+
+}
+
+/******************************************************************************************/
+
 int rec_apps_cmp (gconstpointer a, gconstpointer b)
 {
 	struct rec_app *A = (struct rec_app *) a;

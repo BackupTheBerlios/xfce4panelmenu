@@ -5,7 +5,11 @@ use warnings;
 
 use Data::Dumper;
 
-my @paths = ("/usr/share/applications", "/usr/local/share/applications");
+my @paths = ("/usr/share/applications",
+	     "/usr/local/share/applications",
+	     "/usr/X11R6/share/applications",
+	     "/usr/X11R6/share/gnome/applications",
+	     "/usr/X11R6/share/gnome/apps/Graphics",);
 
 my $menu = {
 	Development => {
@@ -30,12 +34,6 @@ my $menu = {
 	Settings => {
 		type => "menu",
 		icon => "xfce-system-settings",
-		entries => {
-
-		},
-	},
-	News => {
-		type => "menu",
 		entries => {
 
 		},
@@ -103,10 +101,13 @@ sub insert_into_menu {
 	open ENTRY, "<$desktop_path" or warn "$desktop_path $!\n";
 	while (my $line = <ENTRY>) {
 		chomp $line;
-		$desktop_entry{name} = $1    if $line =~ m/Name=(.*)/;
-		$desktop_entry{name_l} = $1  if $line =~ m/Name\[$ENV{LANG}\]=(.*)/;
+		$desktop_entry{name} = $1    if $line =~ m/^Name=(.*)/;
+		$desktop_entry{gname_l} = $1 if $ENV{LANG} and $line =~ m/^GenericName\[$ENV{LANG}\]=(.*)/;
+		$desktop_entry{gname} = $1   if $line =~ m/^GenericName=(.*)/;
+		$desktop_entry{name_l} = $1  if $ENV{LANG} and $line =~ m/^Name\[$ENV{LANG}\]=(.*)/;
 		$desktop_entry{comm} = $1    if $line =~ m/Comment=(.*)/;
-		$desktop_entry{comm_l} = $1  if $line =~ m/Comment\[$ENV{LANG}\]=(.*)/;
+		$desktop_entry{only} = $1    if $line =~ m/OnlyShowIn=(.*);/;
+		$desktop_entry{comm_l} = $1  if $ENV{LANG} and $line =~ m/Comment\[$ENV{LANG}\]=(.*)/;
 		$desktop_entry{cmd}  = $1    if $line =~ m/Exec=(.*)/;
 		$desktop_entry{icon} = $1    if $line =~ m/Icon=(.*)/;
 		$desktop_entry{term} = "no"  if $line =~ m/Terminal=flase/;
@@ -123,8 +124,10 @@ sub insert_into_menu {
 			$categories->{$cat}->{$desktop_entry{cmd}} = {
 				type => "app",
 				name => $desktop_entry{name_l} ? $desktop_entry{name_l} : $desktop_entry{name},
+				gname => $desktop_entry{gname_l} ? $desktop_entry{gname_l} : $desktop_entry{gname},
 				comm => $desktop_entry{comm_l} ? $desktop_entry{comm_l} : $desktop_entry{comm},
 				cmd => $desktop_entry{cmd},
+				only => $desktop_entry{only},
 				icon => $desktop_entry{icon},
 				term => $desktop_entry{term},
 			};
@@ -154,9 +157,12 @@ sub print_level {
 			$level_l .= "</menu>\n";
 		}
 		if ($level->{$entry}->{type} eq "app") {
+			if ($level->{$entry}->{only} && $level->{$entry}->{only} ne "XFCE") {
+				next;
+			}
 			$level_l .= "<app ";
-			if ($level->{$entry}->{comm}) {
-				$level_l .= "name=\"$level->{$entry}->{comm}\"";
+			if ($level->{$entry}->{name} && $level->{$entry}->{only}) {
+				$level_l .= "name=\"$level->{$entry}->{gname}\"";
 			} else {
 				$level_l .= "name=\"$level->{$entry}->{name}\"";
 			}
@@ -196,11 +202,11 @@ sub validate_level {
 }
 
 foreach my $path (@paths) {
-	chdir $path;
+	chdir $path or next;
 
 	opendir (DIR, ".");
 	while (my $entry = readdir (DIR)) {
-		insert_into_menu ($entry);
+		insert_into_menu ($entry) if $entry =~ m/.*\.desktop$/;
 	}
 	closedir DIR;
 }
@@ -217,7 +223,8 @@ close MENU;
 
 $level .= print_level ($menu);
 
-$menu_xml =~ s/<include[^>]*?type=\"system\".*?\/>/$level/;
+$menu_xml =~ s/<!--.*?-->//sg;
+$menu_xml =~ s/<include[^>]*?type=\"system\".*?\/>/$level/sg;
 
 print $menu_xml;
 
