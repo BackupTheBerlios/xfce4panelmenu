@@ -344,6 +344,7 @@ GList *get_rec_apps_list (Menu *menu)
 				(app->icon, app->name, G_CALLBACK (run_menu_app), menu);
 			g_object_set_data (G_OBJECT (app->button), "name-data", app->name);
 			g_object_set_data (G_OBJECT (app->button), "app", app->app);
+			g_object_set_data (G_OBJECT (app->button), "app-data", app);
 			g_object_set_data (G_OBJECT (app->button), "icon-data", app->icon);
 
 			gtk_tooltips_set_tip (GTK_TOOLTIPS (tooltips), app->button,
@@ -461,12 +462,26 @@ run_menu_app (GtkWidget * self, gpointer data)
 {
 	Menu *menu = (Menu *) data;
 	char *app;
+	struct rec_app *app_data;
 
 	g_signal_emit_by_name (menu, "completed");
 
 	app = g_object_get_data (G_OBJECT (self), "app");
+	app_data = (struct rec_app *) g_object_get_data (G_OBJECT (self), "app-data");
+
 	s_rec_apps = update_rec_app_list (s_rec_apps, G_OBJECT (self), menu);
 	write_rec_apps_list (s_rec_apps);
+
+	if (GTK_IS_BUTTON (self)) {
+		gtk_widget_destroy (app_data->button);
+
+		app_data->button = menu_start_create_button_name
+			(app_data->icon, app_data->name, G_CALLBACK (run_menu_app), menu);
+		g_object_set_data (G_OBJECT (app_data->button), "name-data", app_data->name);
+		g_object_set_data (G_OBJECT (app_data->button), "app", app_data->app);
+		g_object_set_data (G_OBJECT (app_data->button), "app-data", app_data);
+		g_object_set_data (G_OBJECT (app_data->button), "icon-data", app_data->icon);
+	}
 
 	run_app (app);
 }
