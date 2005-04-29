@@ -1,0 +1,221 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# TOMÁS ACAUAN SCHERTEL <TSCHERTEL@GMAIL.COM>, 2005.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: xfce4 panel menu plugin\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2005-04-23 14:59+0200\n"
+"PO-Revision-Date: 2005-04-27 18:13-0300\n"
+"Last-Translator: Tomás A. Schertel <tschertel@gmail.com>\n"
+"Language-Team: pt_BR <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: panel-plugin/fsbrowser.c:812
+#: panel-plugin/fsbrowser.c:820
+#: panel-plugin/fsbrowser.c:942
+msgid "Choose Application"
+msgstr "Fecha aplicativo"
+
+#: panel-plugin/fsbrowser.c:852
+msgid "Open in terminal"
+msgstr "Abre no terminal"
+
+#: panel-plugin/fsbrowser.c:856
+msgid "Use startup notification"
+msgstr "Usa notificação de inicialização"
+
+#: panel-plugin/fsbrowser.c:947
+msgid "Open file"
+msgstr "Abre arquivo"
+
+#: panel-plugin/fsbrowser.c:947
+msgid "with:"
+msgstr "com:"
+
+#: panel-plugin/fsbrowser.c:1090
+msgid "Home"
+msgstr "Pasta Pessoal"
+
+#: panel-plugin/fsbrowser.c:1095
+msgid "Root"
+msgstr "Root"
+
+#: panel-plugin/fsbrowser.c:1102
+msgid "Recent files"
+msgstr "Arquivos recentes"
+
+#: panel-plugin/fsbrowser.c:1134
+msgid "show/hide .files"
+msgstr ""
+
+#: panel-plugin/fsbrowser.c:1139
+msgid "Up directory"
+msgstr "Diretório acima"
+
+#: panel-plugin/fsbrowser.c:1144
+#: panel-plugin/fstab.c:161
+msgid "Close"
+msgstr "Fecha"
+
+#: panel-plugin/fstab.c:151
+msgid "Mount/Unmount"
+msgstr "Monta/Desmonta"
+
+#: panel-plugin/fstab.c:156
+msgid "Reload fstab"
+msgstr "Reler fstab"
+
+#: panel-plugin/fstab.c:340
+msgid "mounted"
+msgstr "montado"
+
+#: panel-plugin/fstab.c:351
+msgid "not mounted"
+msgstr "não montado"
+
+#: panel-plugin/fstab.c:358
+msgid "dev  :"
+msgstr ""
+
+#: panel-plugin/fstab.c:359
+msgid "dir  :"
+msgstr ""
+
+#: panel-plugin/fstab.c:360
+msgid "fs   :"
+msgstr ""
+
+#: panel-plugin/fstab.c:361
+msgid "opt  :"
+msgstr ""
+
+#: panel-plugin/fstab.c:362
+msgid "state:"
+msgstr ""
+
+#: panel-plugin/main.c:321
+msgid "Get MIME information when reading directory"
+msgstr ""
+
+#: panel-plugin/main.c:328
+msgid "Use Xfce4 MIME-type module when opening files"
+msgstr ""
+
+#: panel-plugin/main.c:336
+msgid "or use external program (e.g. rox):"
+msgstr "ou usa um programa externo (ex: rox):"
+
+#: panel-plugin/main.c:380
+msgid "Items count in recent apps menu"
+msgstr ""
+
+#: panel-plugin/main.c:393
+msgid "Switch User Command"
+msgstr "Trocar Usuário"
+
+#: panel-plugin/main.c:403
+msgid "Lock Screen Command"
+msgstr "Bloquear Tela"
+
+#: panel-plugin/main.c:413
+msgid "Show Header"
+msgstr "Mostrar Cabeçalho"
+
+#: panel-plugin/main.c:419
+msgid "Show Footer"
+msgstr "Mostrar Rodapé"
+
+#: panel-plugin/main.c:429
+msgid "Edit Applications Menu"
+msgstr "Editar Menu de Aplicativos"
+
+#: panel-plugin/main.c:437
+msgid "Edit User Apps"
+msgstr "Editar Aplicativos de Usuário"
+
+#: panel-plugin/main.c:445
+msgid "Size (width x height)"
+msgstr ""
+
+#: panel-plugin/main.c:465
+msgid "Columns"
+msgstr "Colunas"
+
+#: panel-plugin/main.c:549
+#: panel-plugin/main.c:701
+msgid "General"
+msgstr "Geral"
+
+#: panel-plugin/main.c:553
+msgid "Files Browser"
+msgstr ""
+
+#: panel-plugin/main.c:704
+#: panel-plugin/menustart.c:388
+#: panel-plugin/menustart.c:392
+#: panel-plugin/menustart.c:456
+msgid "Xfce4 Panel Menu"
+msgstr "Menu do Painel XFCE4"
+
+#: panel-plugin/menu.c:1132
+msgid "Most often used apps"
+msgstr "Aplicativos mais usados"
+
+#: panel-plugin/menu.c:1144
+msgid "Applications"
+msgstr "Aplicações"
+
+#: panel-plugin/menu.c:1157
+#: panel-plugin/menu.c:1188
+msgid "User shortcuts"
+msgstr "Atalhos de usuário"
+
+#: panel-plugin/menu.c:1166
+msgid "Extensions"
+msgstr "Extensões"
+
+#: panel-plugin/menu.c:1170
+msgid "Recent Files"
+msgstr "Arquivos Recentes"
+
+#: panel-plugin/menu.c:1174
+msgid "Browse Files"
+msgstr ""
+
+#: panel-plugin/menu.c:1179
+msgid "Mount"
+msgstr "Montar"
+
+#: panel-plugin/menustart.c:113
+#: panel-plugin/menustart.c:183
+#: panel-plugin/menustart.c:215
+#: panel-plugin/menustart.c:578
+msgid "Menu"
+msgstr "Menu"
+
+#: panel-plugin/menustart.c:168
+msgid "Mounter"
+msgstr "Montagem"
+
+#: panel-plugin/menustart.c:200
+#: panel-plugin/menustart.c:231
+msgid "File Browser"
+msgstr "Gerenciador de Arquivos"
+
+#: panel-plugin/menustart.c:439
+msgid "Exit"
+msgstr "Sair"
+
+#: panel-plugin/menustart.c:443
+msgid "Lock Screen"
+msgstr "Bloquear Tela"
+
+#: panel-plugin/menustart.c:447
+msgid "Switch User"
+msgstr "Trocar Usuário"
+
