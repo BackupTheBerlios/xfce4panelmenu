@@ -469,9 +469,6 @@ run_menu_app (GtkWidget * self, gpointer data)
 	app = g_object_get_data (G_OBJECT (self), "app");
 	app_data = (struct rec_app *) g_object_get_data (G_OBJECT (self), "app-data");
 
-	s_rec_apps = update_rec_app_list (s_rec_apps, G_OBJECT (self), menu);
-	write_rec_apps_list (s_rec_apps);
-
 	if (GTK_IS_BUTTON (self)) {
 		gtk_widget_destroy (app_data->button);
 
@@ -482,6 +479,9 @@ run_menu_app (GtkWidget * self, gpointer data)
 		g_object_set_data (G_OBJECT (app_data->button), "app-data", app_data);
 		g_object_set_data (G_OBJECT (app_data->button), "icon-data", app_data->icon);
 	}
+
+	s_rec_apps = update_rec_app_list (s_rec_apps, G_OBJECT (self), menu);
+	write_rec_apps_list (s_rec_apps);
 
 	run_app (app);
 }
