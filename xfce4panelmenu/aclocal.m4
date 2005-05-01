@@ -134,7 +134,7 @@ glib_DEFUN([GLIB_WITH_NLS],
         [AC_TRY_LINK([
 #include <libintl.h>
 ],
-         [return (int) ngettext ("","", 1)],
+         [return !ngettext ("","", 1)],
 	  gt_cv_func_ngettext_libc=yes,
           gt_cv_func_ngettext_libc=no)
         ])
@@ -144,7 +144,7 @@ glib_DEFUN([GLIB_WITH_NLS],
         	[AC_TRY_LINK([
 #include <libintl.h>
 ],
-	          [return (int) dgettext ("","")],
+	          [return !dgettext ("","")],
 		  gt_cv_func_dgettext_libc=yes,
 	          gt_cv_func_dgettext_libc=no)
         	])

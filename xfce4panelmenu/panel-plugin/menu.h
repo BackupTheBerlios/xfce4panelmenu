@@ -59,6 +59,11 @@ GtkWidget *scrolled_box_new (GtkWidget *child);
 #define IS_BOX_MENU_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),\
                             BOX_MENU_TYPE))
 
+enum {
+	DROP_DOWN = 0,
+	IN_PLACE
+};
+
 typedef struct {
 	GtkVBoxClass class;
 } BoxMenuClass;
@@ -66,7 +71,9 @@ typedef struct {
 typedef struct {
 	GtkVBox box;
 
-	GSList *menu;
+	short type;
+
+	struct menu_entry *menu;
 
 	GtkWidget *scrolled_box;
 	GtkWidget *menu_box;
@@ -74,8 +81,10 @@ typedef struct {
 } BoxMenu;
 
 GType box_menu_get_type ();
-GtkWidget *box_menu_new (GSList *menu);
-void *box_menu_root (BoxMenu *bm);
+GtkWidget *box_menu_new (struct menu_entry *menu, short type);
+void box_menu_root (BoxMenu *bm);
+void box_menu_set_menu (BoxMenu *bm, struct menu_entry *menu);
+void box_menu_set_type (short type);
 
 /*******************************************************************************/
 
@@ -117,6 +126,8 @@ typedef struct Menu {
 	gchar *set_app;
 	gchar *term_app;
 	gchar *run_app;
+
+	struct menu_entry *menu_data;
 
 	GtkWidget *menu;
 	unsigned int time;

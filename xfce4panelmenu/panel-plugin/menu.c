@@ -51,6 +51,30 @@ struct rec_app {
 	GtkWidget *button;
 };
 
+enum {
+	TITLE = 0,
+	LUNCHER,
+	SYSTEM,
+	EXTERNAL,
+	SEPARATOR,
+	MENU,
+	BUILTIN
+};
+
+struct menu_entry {
+	short type;
+
+	struct menu_entry *next;
+	struct menu_entry *parent;
+	struct menu_entry *child;
+
+	char *name;
+	char *command;
+	char *icon;
+
+	gboolean term;
+};
+
 #define REC_APP_INIT(X) \
 	(X) = (struct rec_app *) malloc (sizeof (struct rec_app)); \
 	(X)->name = NULL;				 \
@@ -66,17 +90,17 @@ struct rec_app {
 	(X)->label = NULL;				 \
 	(X)->app = NULL;
 
-static char *def_path = "/home/PlumTG/Programming/C/widget/default.png";
 static char *fstab_path = "/etc/fstab";
 static char *mtab_path = "/etc/mtab";
 
 static GList *s_rec_apps;
 
+static void menu_class_init (MenuClass * klass);
+static void menu_init (Menu * menu);
+
 static void show_menu                           (GtkWidget * self, gpointer data);
 static void private_cb_eventbox_style_set       (GtkWidget * widget,
 						 GtkStyle * old_style);
-static GtkWidget *menu_start_create_button_name (char *icon, gchar * text,
-						 GCallback callback, gpointer data);
 static void run_menu_app                        (GtkWidget * self, gpointer data);
 static void repack_rec_apps_buttons             (Menu *menu);
 static void repack_user_buttons                 (Menu *menu, gboolean destroy);
@@ -173,8 +197,152 @@ static gboolean scroll_box (GtkWidget *self, GdkEventScroll *event, gpointer dat
 
 /******************************************************************************************/
 
+struct menu_entry *append_menu_entry (struct menu_entry *menu, struct menu_entry *entry)
+{
+	struct menu_entry *tmp = menu;
+
+	if (!menu) {
+		return entry;
+	}
+
+	for (; tmp->next; tmp = tmp->next);
+
+	tmp->next = entry;
+
+	return menu;
+}
+
+struct menu_entry *init_menu_entry (struct menu_entry *parent)
+{
+	struct menu_entry *entry;
+
+	entry = (struct menu_entry *) malloc (sizeof (struct menu_entry));
+
+	entry->parent = parent;
+	entry->next = NULL;
+	entry->child = NULL;
+	entry->name = NULL;
+	entry->command = NULL;
+	entry->icon = NULL;
+
+	return entry;
+}
+
+void free_menu_entry (struct menu_entry *entry)
+{
+	if (entry->next) {
+		free_menu_entry (entry->next);
+	}
+	if (entry->child) {
+		free_menu_entry (entry->child);
+	}
+	if (entry->name) {
+		free (entry->name);
+	}
+	if (entry->command) {
+		free (entry->command);
+	}
+	if (entry->icon) {
+		free (entry->icon);
+	}
+	free (entry);
+}
+
+struct menu_entry *get_level (xmlNodePtr node, struct menu_entry *parent)
+{
+	struct menu_entry *level = NULL, *tmp = NULL;
+
+	for (; node; node = node->next) {
+		char *visible = NULL;
+
+		visible = xmlGetProp (node, "visible");
+
+		if (visible && strcmp (visible, "false") == 0) {
+			continue;
+		}
+		if (visible) {
+			xmlFree (visible);
+		}
+
+		if (xmlStrEqual (node->name, "menu")) {
+			tmp = init_menu_entry (parent);
+			level = append_menu_entry (level, tmp);
+
+			tmp->type = MENU;
+			tmp->name = xmlGetProp (node, "name");
+			tmp->icon = xmlGetProp (node, "icon");
+			tmp->child = get_level (node->children, tmp);
+		}
+		if (xmlStrEqual (node->name, "app")) {
+			char *term = NULL;
+
+			tmp = init_menu_entry (parent);
+			level = append_menu_entry (level, tmp);
+
+			tmp->type = LUNCHER;
+			tmp->name = xmlGetProp (node, "name");
+			tmp->icon = xmlGetProp (node, "icon");
+			tmp->command = xmlGetProp (node, "cmd");
+			term = xmlGetProp (node, "term");
+			if (term && strcmp (term, "no") == 0) {
+				tmp->term = FALSE;
+			} else {
+				tmp->term = TRUE;
+			}
+		}
+		if (xmlStrEqual (node->name, "separator")) {
+			tmp = init_menu_entry (parent);
+			level = append_menu_entry (level, tmp);
+
+			tmp->type = SEPARATOR;
+		}
+		if (xmlStrEqual (node->name, "title")) {
+			tmp = init_menu_entry (parent);
+			level = append_menu_entry (level, tmp);
+
+			tmp->type = TITLE;
+			tmp->name = xmlGetProp (node, "name");
+			tmp->icon = xmlGetProp (node, "icon");
+		}
+/* 		if (xmlStrEqual (node->name, "builtin")) { */
+/* 			tmp = init_menu_entry (parent); */
+/* 			level = append_menu_entry (level, tmp); */
+
+/* 			tmp->type = BUILTIN; */
+/* 		} */
+/* 		if (xmlStrEqual (node->name, "include")) { */
+/* 			tmp = init_menu_entry (parent); */
+/* 			level = append_menu_entry (level, tmp); */
+/* 		} */
+	}
+
+	return level;
+}
+
+struct menu_entry *parse_menu ()
+{
+	char *read_file;
+	xmlDocPtr doc = NULL;
+	xmlNodePtr node = NULL;
+	struct menu_entry *menu;
+
+	read_file = ms_get_read_file ("menu.xml");
+	doc = xmlParseFile (read_file);
+	node = xmlDocGetRootElement (doc);
+
+	menu = get_level (node->children, NULL);
+
+	xmlFreeDoc (doc);
+
+	return menu;
+}
+
+/******************************************************************************************/
+
 static void box_menu_class_init (BoxMenuClass* klass);
 static void box_menu_init (BoxMenu* menu);
+
+void box_menu_level (BoxMenu *bm, struct menu_entry *entry);
 
 GType box_menu_get_type ()
 {
@@ -207,27 +375,222 @@ static void box_menu_class_init (BoxMenuClass* klass)
 
 static void box_menu_init (BoxMenu* bm)
 {
+	bm->header_button = NULL;
+
 	bm->menu_box = gtk_vbox_new (FALSE, 0);
 	bm->scrolled_box = scrolled_box_new (bm->menu_box);
+
+	gtk_box_pack_end (GTK_BOX (bm), bm->scrolled_box, TRUE, TRUE, 0);
 }
 
-GtkWidget *box_menu_new (GSList *menu)
+GtkWidget *box_menu_new (struct menu_entry *menu, short type)
 {
 	BoxMenu *bm;
 
 	bm = BOX_MENU (g_object_new (box_menu_get_type (), NULL));
 
 	bm->menu = menu;
+	bm->type = type;
 
 	return GTK_WIDGET (bm);
 }
 
-void *box_menu_root (BoxMenu *bm)
+void box_menu_activate_button (GtkWidget *self, gpointer data)
 {
+	struct menu_entry *menu_entry = (struct menu_entry *) data;
+	BoxMenu *bm;
 
+	switch (menu_entry->type) {
+	case MENU:
+		bm = g_object_get_data (G_OBJECT (self), "box_menu");
+		switch (bm->type) {
+		case DROP_DOWN:
+			
+			break;
+		case IN_PLACE:
+			box_menu_level (bm, menu_entry->child);
+			break;
+		}
+		break;
+	case LUNCHER:
+
+		break;
+	}
+}
+
+void box_menu_level (BoxMenu *bm, struct menu_entry *entry)
+{
+	struct menu_entry *menu_entry;
+	GList *buttons, *iter;
+	GtkWidget *button;
+
+	if (bm->header_button) {
+		gtk_conainer_remove (GTK_CONTAINER (bm), bm->header_button);
+		bm->header_button = NULL;
+	}
+
+	if (entry->parent) {
+		bm->header_button = menu_start_create_button
+			("gtk-up", "Up level",
+			 NULL, NULL);
+		gtk_box_pack_end (GTK_BOX (bm), button, FALSE, TRUE, 0);
+	}
+
+	buttons = gtk_container_get_children (GTK_CONTAINER (bm->menu_box));
+	for (iter = buttons; iter; iter = iter->next) {
+		gtk_container_remove (GTK_CONTAINER (bm->menu_box), GTK_WIDGET (iter->data));
+	}
+
+	for (menu_entry = entry ? entry : bm->menu; menu_entry; menu_entry = menu_entry->next) {
+		switch (menu_entry->type) {
+		case LUNCHER:
+			button = menu_start_create_button_name
+				(menu_entry->icon, menu_entry->name,
+				 G_CALLBACK (box_menu_activate_button), menu_entry,
+				 FALSE);
+			gtk_box_pack_start (GTK_BOX (bm->menu_box), button, FALSE, TRUE, 0);
+			break;
+		case MENU:
+			button = menu_start_create_button_name
+				(menu_entry->icon, menu_entry->name,
+				 G_CALLBACK (box_menu_activate_button), menu_entry,
+				 TRUE);
+			g_object_set_data (G_OBJECT (button), "box_menu",
+					   (gpointer) bm);
+			gtk_box_pack_start (GTK_BOX (bm->menu_box), button, FALSE, TRUE, 0);
+			break;
+		case SEPARATOR:
+			button = gtk_hseparator_new ();
+			gtk_box_pack_start (GTK_BOX (bm->menu_box), button, FALSE, TRUE, 0);
+			break;
+		case TITLE:
+			button = menu_start_create_button_name
+				(menu_entry->icon, menu_entry->name, NULL, NULL, FALSE);
+			gtk_widget_set_sensitive (button, FALSE);
+			gtk_box_pack_start (GTK_BOX (bm->menu_box), button, FALSE, TRUE, 0);
+			break;
+		}
+	}
+}
+
+void box_menu_root (BoxMenu *bm)
+{
+	box_menu_level (bm, NULL);
+}
+
+void box_menu_set_menu (BoxMenu *bm, struct menu_entry *menu)
+{
+	bm->menu = menu;
 }
 
 /******************************************************************************************/
+
+GtkWidget *get_menu_image (char *icon)
+{
+	GdkPixbuf *pixbuf = NULL;
+	GdkPixbuf *normal_pixbuf = NULL;
+	GdkPixbuf *def = NULL;
+	GtkWidget *image;
+
+	if (icon) {
+		pixbuf = xfce_icon_theme_load
+			(xfce_icon_theme_get_for_screen (NULL),
+			 icon, 16);
+
+		if (pixbuf) {
+			normal_pixbuf = gdk_pixbuf_scale_simple
+				(pixbuf, 16, 16, GDK_INTERP_HYPER);
+		}
+
+		if (normal_pixbuf) {
+			image = gtk_image_new_from_pixbuf (normal_pixbuf);
+		} else {
+			image = gtk_image_new_from_pixbuf (def);
+		}
+	} else {
+		image = gtk_image_new_from_pixbuf (def);
+	}
+
+	return image;
+}
+
+GtkWidget *build_gtk_menu (struct menu_entry *menu, Menu *start)
+{
+	GtkWidget *menu_widget;
+	GtkWidget *submenu_widget;
+	GtkWidget *menu_item;
+
+	menu_widget = gtk_menu_new ();
+
+	for (; menu; menu = menu->next) {
+		GdkPixbuf *pixbuf = NULL;
+		GdkPixbuf *normal_pixbuf = NULL;
+		GdkPixbuf *def = NULL;
+		GtkWidget *image;
+
+		switch (menu->type) {
+		case LUNCHER:
+			menu_item = gtk_image_menu_item_new_with_label (menu->name);
+			g_object_set_data (G_OBJECT (menu_item), "name-data",
+					   menu->name);
+			g_object_set_data (G_OBJECT (menu_item), "icon-data",
+					   menu->icon);
+
+			image = get_menu_image (menu->icon);
+
+			gtk_image_menu_item_set_image
+				(GTK_IMAGE_MENU_ITEM (menu_item), image);
+
+			g_object_set_data (G_OBJECT (menu_item), "app",
+					   menu->command);
+			g_signal_connect_after (G_OBJECT (menu_item),
+						"activate",
+						G_CALLBACK (run_menu_app),
+						start);
+
+			gtk_widget_show (menu_item);
+			gtk_menu_shell_append (GTK_MENU_SHELL (menu_widget),
+					       menu_item);
+			break;
+		case MENU:
+			submenu_widget = build_gtk_menu (menu->child, start);
+			menu_item = gtk_image_menu_item_new_with_label (menu->name);
+
+			image = get_menu_image (menu->icon);
+
+			gtk_image_menu_item_set_image
+				(GTK_IMAGE_MENU_ITEM (menu_item), image);
+			gtk_menu_item_set_submenu (GTK_MENU_ITEM (menu_item),
+						   submenu_widget);
+			gtk_widget_show (menu_item);
+			gtk_menu_shell_append (GTK_MENU_SHELL (menu_widget),
+					       menu_item);
+			break;
+		case SEPARATOR:
+			menu_item = gtk_separator_menu_item_new ();
+			gtk_widget_show (menu_item);
+			gtk_menu_shell_append (GTK_MENU_SHELL (menu_widget),
+					       menu_item);
+			break;
+		case TITLE:
+			menu_item = gtk_image_menu_item_new_with_label (menu->name);
+
+			image = get_menu_image (menu->icon);
+
+			gtk_image_menu_item_set_image
+				(GTK_IMAGE_MENU_ITEM (menu_item), image);
+			gtk_widget_set_sensitive (menu_item, FALSE);
+			gtk_widget_show (menu_item);
+			gtk_menu_shell_append (GTK_MENU_SHELL (menu_widget),
+					       menu_item);
+			break;
+		}
+	}
+
+	gtk_widget_show (menu_widget);
+
+	return menu_widget;
+}
 
 int rec_apps_cmp (gconstpointer a, gconstpointer b)
 {
@@ -341,7 +704,7 @@ GList *get_rec_apps_list (Menu *menu)
 			app->count = atoi (prop);
 
 			app->button = menu_start_create_button_name 
-				(app->icon, app->name, G_CALLBACK (run_menu_app), menu);
+				(app->icon, app->name, G_CALLBACK (run_menu_app), menu, FALSE);
 			g_object_set_data (G_OBJECT (app->button), "name-data", app->name);
 			g_object_set_data (G_OBJECT (app->button), "app", app->app);
 			g_object_set_data (G_OBJECT (app->button), "app-data", app);
@@ -425,7 +788,7 @@ update_rec_app_list (GList * apps, GObject * obj, Menu *menu)
 
 	app->button = menu_start_create_button_name (app->icon, app->name,
 						     G_CALLBACK
-						     (run_menu_app), menu);
+						     (run_menu_app), menu, FALSE);
 	g_object_set_data (G_OBJECT (app->button), "name-data", app->name);
 	g_object_set_data (G_OBJECT (app->button), "app", app->app);
 	g_object_set_data (G_OBJECT (app->button), "icon-data", app->icon);
@@ -473,7 +836,7 @@ run_menu_app (GtkWidget * self, gpointer data)
 		gtk_widget_destroy (app_data->button);
 
 		app_data->button = menu_start_create_button_name
-			(app_data->icon, app_data->name, G_CALLBACK (run_menu_app), menu);
+			(app_data->icon, app_data->name, G_CALLBACK (run_menu_app), menu, FALSE);
 		g_object_set_data (G_OBJECT (app_data->button), "name-data", app_data->name);
 		g_object_set_data (G_OBJECT (app_data->button), "app", app_data->app);
 		g_object_set_data (G_OBJECT (app_data->button), "app-data", app_data);
@@ -514,152 +877,6 @@ menu_term_app (GtkWidget * self, gpointer data)
 
 	run_app (menu->term_app);
 }
-
-static GtkWidget *
-get_menu (xmlNodePtr node, Menu * start)
-{
-	GtkWidget *menu, *menuitem = NULL, *submenu = NULL;
-	char *icon;
-	GdkPixbuf *def;
-	GtkWidget *image;
-	char *prop;
-
-	def = gdk_pixbuf_new_from_file (def_path, NULL);
-
-	menu = gtk_menu_new ();
-
-	for (node = node->children; node; node = node->next) {
-		char *visible = xmlGetProp (node, "visible");
-
-		if (visible && strcmp (visible, "false") == 0) {
-			free (visible);
-			continue;
-		} else if (visible) {
-			free (visible);
-		}
-
-		if (xmlStrEqual (node->name, "menu")) {
-			icon = xmlGetProp (node, "icon");
-			submenu = get_menu (node, start);
-			prop = xmlGetProp (node, "name");
-			menuitem = gtk_image_menu_item_new_with_label (prop);
-			free (prop);
-			if (icon) {
-				GdkPixbuf *normal_pixbuf = NULL;
-				GdkPixbuf *pixbuf;
-				//					MIME_ICON_create_pixbuf (icon);
-
-				pixbuf = xfce_icon_theme_load (xfce_icon_theme_get_for_screen (NULL), icon, 16);
-
-				if (pixbuf) {
-					normal_pixbuf = gdk_pixbuf_scale_simple
-						(pixbuf, 16, 16, GDK_INTERP_HYPER);
-				}
-
-				if (normal_pixbuf) {
-					image = gtk_image_new_from_pixbuf (normal_pixbuf);
-				} else {
-					image = gtk_image_new_from_pixbuf (def);
-				}
-			} else
-				image = gtk_image_new_from_pixbuf (def);
-			gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM
-						       (menuitem), image);
-			gtk_menu_item_set_submenu (GTK_MENU_ITEM (menuitem),
-						   submenu);
-			gtk_widget_show (menuitem);
-			gtk_menu_shell_append (GTK_MENU_SHELL (menu),
-					       menuitem);
-		}
-		if (xmlStrEqual (node->name, "app")
-		    || xmlStrEqual (node->name, "builtin")) {
-
-			prop = xmlGetProp (node, "name");
-			menuitem = gtk_image_menu_item_new_with_label (prop);
-			g_object_set_data (G_OBJECT (menuitem), "name-data",
-					   prop);
-
-			icon = xmlGetProp (node, "icon");
-			g_object_set_data (G_OBJECT (menuitem), "icon-data",
-					   icon);
-
-			if (icon) {
-				GdkPixbuf *normal_pixbuf = NULL;
-				GdkPixbuf *pixbuf;
-				//MIME_ICON_create_pixbuf (icon);
-
-				pixbuf = xfce_icon_theme_load (xfce_icon_theme_get_for_screen (NULL), icon, 16);
-
-				if (pixbuf) {
-					normal_pixbuf = gdk_pixbuf_scale_simple
-						(pixbuf, 16, 16, GDK_INTERP_HYPER);
-				}
-
-				if (normal_pixbuf) {
-					image = gtk_image_new_from_pixbuf (normal_pixbuf);
-				} else {
-					image = gtk_image_new_from_pixbuf (def);
-				}
-			} else {
-				image = gtk_image_new_from_pixbuf (def);
-			}
-
-			gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM
-						       (menuitem), image);
-
-			g_object_set_data (G_OBJECT (menuitem), "app",
-					   xmlGetProp (node, "cmd"));
-			g_signal_connect_after (G_OBJECT (menuitem),
-						"activate",
-						G_CALLBACK (run_menu_app),
-						start);
-
-			gtk_widget_show (menuitem);
-			gtk_menu_shell_append (GTK_MENU_SHELL (menu),
-					       menuitem);
-		}
-		if (xmlStrEqual (node->name, "separator")) {
-			menuitem = gtk_separator_menu_item_new ();
-			gtk_widget_show (menuitem);
-			gtk_menu_shell_append (GTK_MENU_SHELL (menu),
-					       menuitem);
-		}
-		if (xmlStrEqual (node->name, "title")) {
-			prop = xmlGetProp (node, "name");
-			menuitem = gtk_image_menu_item_new_with_label (prop);
-			free (prop);
-			gtk_widget_set_sensitive (menuitem, FALSE);
-			gtk_widget_show (menuitem);
-			gtk_menu_shell_append (GTK_MENU_SHELL (menu),
-					       menuitem);
-		}
-	}
-
-	gtk_widget_show (menu);
-	return menu;
-}
-
-static GtkWidget *
-create_app_menu (Menu * menu)
-{
-	GtkWidget *menu_start;
-	xmlDocPtr doc = NULL;
-	xmlNodePtr node = NULL;
-	char *read_file;
-
-	read_file = ms_get_read_file ("menu.xml");
-	doc = xmlParseFile (read_file);
-	node = xmlDocGetRootElement (doc);
-
-	menu_start = get_menu (node, menu);
-
-	xmlFreeDoc (doc);
-
-	return menu_start;
-}
-
-static void menu_class_init (MenuClass * klass);
-static void menu_init (Menu * menu);
 
 static void
 button_press_g (GtkWidget * self, gpointer data)
@@ -731,14 +948,25 @@ GtkWidget *create_menu_header (gchar *title)
 
 static GtkWidget *
 menu_start_create_button_image (GtkWidget *image, gchar * text,
-				GCallback callback, gpointer data)
+				GCallback callback, gpointer data,
+				gboolean bold)
 {
 	GtkWidget *button;
 	GtkWidget *label;
 	GtkWidget *button_hbox;
 
 	button = gtk_button_new ();
-	label = gtk_label_new (text);
+	label = gtk_label_new (NULL);
+	if (bold) {
+		char *markup;
+
+		gtk_label_set_use_markup (GTK_LABEL (label), TRUE);
+		markup = g_strjoin ("", "<b>", text, "</b>", NULL);
+		gtk_label_set_markup (GTK_LABEL (label), markup);
+		g_free (markup);
+	} else {
+		gtk_label_set_text (GTK_LABEL (label), text);
+	}
 	gtk_label_set_ellipsize (GTK_LABEL (label), PANGO_ELLIPSIZE_END);
 	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
 	button_hbox = gtk_hbox_new (FALSE, 5);
@@ -756,9 +984,9 @@ menu_start_create_button_image (GtkWidget *image, gchar * text,
 	return button;
 }
 
-static GtkWidget *
-menu_start_create_button_name (char *icon, gchar * text,
-			       GCallback callback, gpointer data)
+GtkWidget *menu_start_create_button_name (char *icon, gchar * text,
+					  GCallback callback, gpointer data,
+					  gboolean bold)
 {
 	GtkWidget *button;
 	GtkWidget *label;
@@ -781,7 +1009,7 @@ menu_start_create_button_name (char *icon, gchar * text,
 	}
 	image = gtk_image_new_from_pixbuf (pixbuf);
 
-	return menu_start_create_button_image (image, text, callback, data);
+	return menu_start_create_button_image (image, text, callback, data, bold);
 }
 
 GtkWidget *menu_start_create_button (gchar * stock_id, gchar * text,
@@ -795,7 +1023,7 @@ GtkWidget *menu_start_create_button (gchar * stock_id, gchar * text,
 	image = gtk_image_new_from_stock (stock_id,
 					  GTK_ICON_SIZE_LARGE_TOOLBAR);
 
-	return menu_start_create_button_image (image, text, callback, data);
+	return menu_start_create_button_image (image, text, callback, data, FALSE);
 }
 
 static GtkWidget *
@@ -810,7 +1038,7 @@ menu_start_create_button_pixbuf (GdkPixbuf * pixbuf,
 
 	image = gtk_image_new_from_pixbuf (pixbuf);
 
-	return menu_start_create_button_image (image, text, callback, data);
+	return menu_start_create_button_image (image, text, callback, data, FALSE);
 }
 
 GType
@@ -923,6 +1151,8 @@ menu_init (Menu * menu)
 		menu->user_actions[i] = NULL;
 	}
 
+	menu->menu_data = NULL;
+
 	menu->columns = 2;
 
 	menu->r_apps_count = 10;
@@ -976,7 +1206,7 @@ static void repack_user_buttons (Menu *menu, gboolean destroy)
 
 			button = menu_start_create_button_name
 				(action->icon_path, action->label,
-				 G_CALLBACK (run_user_action), menu);
+				 G_CALLBACK (run_user_action), menu, FALSE);
 			g_object_set_data (G_OBJECT (button), "user_action", action);
 
 			gtk_box_pack_start (GTK_BOX (menu->column_boxes[i]), button, FALSE, FALSE, 0);
@@ -1245,6 +1475,10 @@ static void menu_destroy (GtkObject *object)
 		menu->menu = NULL;
 	}
 
+	if (menu->menu_data) {
+		//free_menu_entry (menu->menu_data);
+	}
+
 	free_recent_apps (s_rec_apps);
 	s_rec_apps = NULL;
 
@@ -1351,8 +1585,12 @@ static void show_menu (GtkWidget * self, gpointer data)
 		menu->time = fi.st_mtime;
 		if (menu->menu) {
 			gtk_widget_destroy (menu->menu);
+			//free_menu_entry (menu->menu_data);
 		}
-		menu->menu = create_app_menu (menu);
+		menu->menu_data = parse_menu ();
+		menu->menu = build_gtk_menu (menu->menu_data, menu);
+
+		//menu->menu = create_app_menu (menu);
 		g_signal_connect
 			(G_OBJECT (menu->menu), "deactivate",
 			 G_CALLBACK (menu_deactivated), menu);

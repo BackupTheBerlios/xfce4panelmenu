@@ -22,7 +22,7 @@ AC_HEADER_STDC
 PKG_CHECK_MODULES(GTK, dbh-1.0,,exit)
 
 dnl check for i18n support
-BM_I18N([xfce4-panel-menu],[pl])
+BM_I18N([xfce4-panel-menu],[pl es pt_BR])
 
 dnl configure the panel plugin
 XFCE_PANEL_PLUGIN([XFCE4_PANEL], [4.2.0])
