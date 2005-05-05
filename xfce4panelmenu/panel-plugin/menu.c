@@ -425,7 +425,7 @@ void box_menu_level (BoxMenu *bm, struct menu_entry *entry)
 	GtkWidget *button;
 
 	if (bm->header_button) {
-		gtk_conainer_remove (GTK_CONTAINER (bm), bm->header_button);
+		gtk_container_remove (GTK_CONTAINER (bm), bm->header_button);
 		bm->header_button = NULL;
 	}
 
