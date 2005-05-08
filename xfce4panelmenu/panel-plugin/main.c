@@ -141,6 +141,9 @@ struct menu_start
 	GtkWidget *switch_entry;
 	GtkWidget *term_entry;
 	GtkWidget *run_entry;
+
+	GtkWidget *menu_trad;
+	GtkWidget *menu_mod;
 };
 
 void button_clicked (GtkWidget *self, gpointer data)
@@ -478,6 +481,47 @@ GtkWidget *init_general_page (Control *ctrl)
 	return vbox;
 }
 
+GtkWidget *init_menu_page (Control *ctrl)
+{
+	GtkWidget *vbox;
+	GtkWidget *table;
+	GtkWidget *label;
+	Menu *menu;
+	struct menu_start *ms = (struct menu_start *) ctrl->data;
+
+	menu = MENU (menu_start_get_menu_widget
+		     (MENU_START (((struct menu_start *) ctrl->data)->menustart)));
+
+	vbox = gtk_vbox_new (FALSE, 1);
+	gtk_container_set_border_width (GTK_CONTAINER (vbox), 5);
+	table = gtk_table_new (4, 3, TRUE);
+
+	label = gtk_label_new (_("For applications menu use:"));
+	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
+	gtk_table_attach (GTK_TABLE (table), label, 0, 3, 0, 1,
+			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
+
+	ms->menu_trad = gtk_radio_button_new_with_label
+		(NULL, _("eXPerince style"));
+	if (menu->menu_style == TRADITIONAL) {
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (ms->menu_trad), TRUE);
+	}
+	gtk_table_attach (GTK_TABLE (table), ms->menu_trad, 1, 3, 1, 2,
+			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
+
+	ms->menu_mod = gtk_radio_button_new_with_label_from_widget
+		(GTK_RADIO_BUTTON (ms->menu_trad), _("or new style"));
+	if (menu->menu_style == MODERN) {
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (ms->menu_mod), TRUE);
+	}
+	gtk_table_attach (GTK_TABLE (table), ms->menu_mod, 1, 3, 2, 3,
+			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
+
+	gtk_box_pack_start (GTK_BOX (vbox), table, FALSE, TRUE, 3);
+
+	return vbox;
+}
+
 static void
 apply_options (gpointer data)
 {
@@ -495,7 +539,7 @@ apply_options (gpointer data)
 	value = gtk_spin_button_get_value (GTK_SPIN_BUTTON (ms->recent_count));
 	menu->r_apps_count = (int) value;
 
- 	menu_repack_recent_apps (menu);
+/*  	menu_repack_recent_apps (menu); */
 
 	value = gtk_spin_button_get_value (GTK_SPIN_BUTTON (ms->width_spin));
 	MENU_START (ms->menustart)->width = value;
@@ -535,6 +579,13 @@ apply_options (gpointer data)
 	if (MENU_START (ms->menustart)->switch_app)
 		free (MENU_START (ms->menustart)->switch_app);
 	MENU_START (ms->menustart)->switch_app = app;
+
+	check = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (ms->menu_trad));
+	if (check) {
+		set_menu_style (menu, TRADITIONAL);
+	} else {
+		set_menu_style (menu, MODERN);
+	}
 }
 
 static void
@@ -548,6 +599,10 @@ menustart_create_options (Control *ctrl, GtkContainer *con, GtkWidget *done)
 
 	label = gtk_label_new (_("General"));
 	vbox = init_general_page (ctrl);
+	gtk_notebook_append_page (GTK_NOTEBOOK (notebook), vbox, label);
+
+	label = gtk_label_new (_("Applications Menu"));
+	vbox = init_menu_page (ctrl);
 	gtk_notebook_append_page (GTK_NOTEBOOK (notebook), vbox, label);
 
 	label = gtk_label_new (_("Files Browser"));
@@ -593,7 +648,7 @@ read_conf (Control *control, xmlNodePtr node)
 		int count = atoi (value);
 		if (menu->r_apps_count != count) {
 			menu->r_apps_count = count;
-			menu_repack_recent_apps (menu);
+/* 			menu_repack_recent_apps (menu); */
 		}
 	}
 
@@ -640,6 +695,16 @@ read_conf (Control *control, xmlNodePtr node)
 	value = xmlGetProp(node, (const xmlChar *) "columns");
 	if (value) {
 		menu->columns = atoi (value);
+	}
+
+	value = xmlGetProp(node, (const xmlChar *) "menu_style");
+	if (value && strcmp (value, "modern") == 0) {
+		set_menu_style (menu, MODERN);
+	} else {
+		set_menu_style (menu, TRADITIONAL);
+	}
+	if (value) {
+		xmlFree (value);
 	}
 }
 
@@ -692,6 +757,12 @@ write_conf (Control *control, xmlNodePtr node)
 		   MENU_START (ms->menustart)->switch_app
 		   ? MENU_START (ms->menustart)->switch_app
 		   : "gdmflexiserver");
+
+	if (menu->menu_style == MODERN) {
+		xmlSetProp(node, (const xmlChar *) "menu_style", "modern");
+	} else {
+		xmlSetProp(node, (const xmlChar *) "menu_style", "traditional");
+	}
 }
 
 G_MODULE_EXPORT void xfce_control_class_init (ControlClass *cc)

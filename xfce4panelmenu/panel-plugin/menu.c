@@ -34,6 +34,7 @@
 
 #include "menu.h"
 #include "common.h"
+#include "default.xpm"
 
 extern GModule *xfmime_icon_cm;
 
@@ -73,6 +74,8 @@ struct menu_entry {
 	char *icon;
 
 	gboolean term;
+
+	int count;
 };
 
 #define REC_APP_INIT(X) \
@@ -195,6 +198,13 @@ static gboolean scroll_box (GtkWidget *self, GdkEventScroll *event, gpointer dat
 			 SCROLLED_BOX (self)->x, SCROLLED_BOX (self)->y);
 }
 
+static void scrolled_box_reset (ScrolledBox *sb)
+{
+	sb->y = 0;
+
+	gtk_layout_move (GTK_LAYOUT (sb), sb->child, sb->x, sb->y);
+}
+
 /******************************************************************************************/
 
 struct menu_entry *append_menu_entry (struct menu_entry *menu, struct menu_entry *entry)
@@ -224,6 +234,7 @@ struct menu_entry *init_menu_entry (struct menu_entry *parent)
 	entry->name = NULL;
 	entry->command = NULL;
 	entry->icon = NULL;
+	entry->count = 0;
 
 	return entry;
 }
@@ -284,10 +295,18 @@ struct menu_entry *get_level (xmlNodePtr node, struct menu_entry *parent)
 			tmp->icon = xmlGetProp (node, "icon");
 			tmp->command = xmlGetProp (node, "cmd");
 			term = xmlGetProp (node, "term");
-			if (term && strcmp (term, "no") == 0) {
-				tmp->term = FALSE;
-			} else {
+			if (term && strcmp (term, "yes") == 0) {
 				tmp->term = TRUE;
+			} else {
+				tmp->term = FALSE;
+			}
+			if (term) {
+				xmlFree (term);
+			}
+			term = xmlGetProp (node, "count");
+			if (term) {
+				tmp->count = atoi (term);
+				xmlFree (term);
 			}
 		}
 		if (xmlStrEqual (node->name, "separator")) {
@@ -319,14 +338,16 @@ struct menu_entry *get_level (xmlNodePtr node, struct menu_entry *parent)
 	return level;
 }
 
-struct menu_entry *parse_menu ()
+struct menu_entry *parse_menu (char *read_file)
 {
-	char *read_file;
 	xmlDocPtr doc = NULL;
 	xmlNodePtr node = NULL;
 	struct menu_entry *menu;
 
-	read_file = ms_get_read_file ("menu.xml");
+	if (!g_file_test (read_file, G_FILE_TEST_EXISTS)) {
+		return NULL;
+	}
+
 	doc = xmlParseFile (read_file);
 	node = xmlDocGetRootElement (doc);
 
@@ -337,7 +358,135 @@ struct menu_entry *parse_menu ()
 	return menu;
 }
 
+xmlNodePtr get_menu_level_xml (struct menu_entry *menu, xmlNodePtr parent)
+{
+	xmlNodePtr node = NULL;
+	char count[6];
+
+	for (; menu; menu = menu->next) {
+		switch (menu->type) {
+		case MENU:
+			node = xmlNewChild(parent, NULL, BAD_CAST "menu", NULL);
+			xmlSetProp(node, (const xmlChar *) "name", menu->name);
+			if (menu->icon) {
+				xmlSetProp(node, (const xmlChar *) "icon", menu->icon);
+			}
+			if (menu->child) {
+				get_menu_level_xml (menu->child, node);
+			}
+			break;
+		case LUNCHER:
+			node = xmlNewChild(parent, NULL, BAD_CAST "app", NULL);
+			xmlSetProp(node, (const xmlChar *) "name", menu->name);
+			xmlSetProp(node, (const xmlChar *) "cmd", menu->command);
+			if (menu->icon) {
+				xmlSetProp(node, (const xmlChar *) "icon", menu->icon);
+			}
+			if (menu->term) {
+				xmlSetProp(node, (const xmlChar *) "term", "yes");
+			}
+			if (menu->count) {
+				sprintf (count, "%d", menu->count);
+				xmlSetProp(node, (const xmlChar *) "count", count);
+			}
+			break;
+		case SEPARATOR:
+			node = xmlNewChild(parent, NULL, BAD_CAST "separator", NULL);
+			break;
+		case TITLE:
+			node = xmlNewChild(parent, NULL, BAD_CAST "title", NULL);
+			xmlSetProp(node, (const xmlChar *) "name", menu->name);
+			if (menu->icon) {
+				xmlSetProp(node, (const xmlChar *) "icon", menu->icon);
+			}
+			break;
+		}
+	}
+
+	return node;
+}
+
+void write_menu (struct menu_entry *menu, char *save_file)
+{
+	FILE *file;
+	xmlDocPtr doc = NULL;
+	xmlNodePtr node = NULL, root_node = NULL;
+
+	doc = xmlNewDoc(BAD_CAST "1.0");
+	root_node = xmlNewNode(NULL, BAD_CAST "xfdesktop-menu");
+
+	xmlDocSetRootElement(doc, root_node);
+
+	get_menu_level_xml (menu, root_node);
+
+	xmlSaveFormatFile (save_file, doc, 1);
+}
+
+struct menu_entry *insert_into_menu (struct menu_entry *menu, struct menu_entry *entry)
+{
+	struct menu_entry *node, *prev_node = NULL, *tmp = NULL;
+
+	if (menu == NULL) {
+		tmp = init_menu_entry (NULL);
+		tmp->command = g_strdup (entry->command);
+		tmp->icon = g_strdup (entry->icon);
+		tmp->name = g_strdup (entry->name);
+		tmp->term = entry->term;
+		tmp->type = entry->type;
+
+		tmp->count = 1;
+		return tmp;
+	}
+
+	if (strcmp (menu->command, entry->command) == 0) {
+		menu->count++;
+		return menu;
+	}
+	for (node = menu;
+	     node->next && strcmp (node->next->command, entry->command);
+	     node = node->next) {
+		prev_node = node;
+	}
+	if (node->next == NULL) {
+		node->next = init_menu_entry (menu->parent);
+		node->next->command = g_strdup (entry->command);
+		node->next->icon = g_strdup (entry->icon);
+		node->next->name = g_strdup (entry->name);
+		node->next->term = entry->term;
+		node->next->type = entry->type;
+		node->next->count = 1;
+
+		return menu;
+	} else {
+		tmp = node->next;
+		tmp->count++;
+		if (node->count < tmp->count) {
+			if (prev_node) {
+				prev_node->next = tmp;
+				node->next = tmp->next;
+				tmp->next = node;
+			} else {
+				node->next = tmp->next;
+				tmp->next = node;
+				menu = tmp;
+			}
+			if (tmp->parent && tmp->parent->child == node) {
+				tmp->parent->child = tmp;
+			}
+		}
+	}
+
+	return menu;
+}
+
 /******************************************************************************************/
+
+enum {
+	BM_COMPLETED,
+	BM_LAST_SIGNAL
+};
+
+static guint bm_signals[BM_LAST_SIGNAL] = { 0 };
 
 static void box_menu_class_init (BoxMenuClass* klass);
 static void box_menu_init (BoxMenu* menu);
@@ -371,6 +520,18 @@ GType box_menu_get_type ()
 static void box_menu_class_init (BoxMenuClass* klass)
 {
 	GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (klass);
+	GObjectClass *object_class;
+
+	object_class = (GObjectClass *) klass;
+
+	bm_signals[BM_COMPLETED] =
+		g_signal_new ("completed",
+			      G_OBJECT_CLASS_TYPE (object_class),
+			      G_SIGNAL_RUN_FIRST,
+			      G_STRUCT_OFFSET (BoxMenuClass,
+					       completed), NULL, NULL,
+			      g_cclosure_marshal_VOID__VOID,
+			      G_TYPE_NONE, 0);
 }
 
 static void box_menu_init (BoxMenu* bm)
@@ -383,7 +544,7 @@ static void box_menu_init (BoxMenu* bm)
 	gtk_box_pack_end (GTK_BOX (bm), bm->scrolled_box, TRUE, TRUE, 0);
 }
 
-GtkWidget *box_menu_new (struct menu_entry *menu, short type)
+GtkWidget *box_menu_new (struct menu_entry **menu, short type)
 {
 	BoxMenu *bm;
 
@@ -413,9 +574,22 @@ void box_menu_activate_button (GtkWidget *self, gpointer data)
 		}
 		break;
 	case LUNCHER:
-
+		bm = g_object_get_data (G_OBJECT (self), "box_menu");
+		g_signal_emit_by_name (G_OBJECT (bm), "completed");
+		*(bm->pop_apps) = insert_into_menu (*(bm->pop_apps), menu_entry);
+		xfce_exec (menu_entry->command, menu_entry->term, FALSE, NULL);
 		break;
 	}
+}
+
+void box_menu_up_level (GtkWidget *self, gpointer data)
+{
+	struct menu_entry *menu_entry = (struct menu_entry *) data;
+	BoxMenu *bm;
+
+	bm = g_object_get_data (G_OBJECT (self), "box_menu");
+
+	box_menu_level (bm, menu_entry->parent ? menu_entry->parent->parent : NULL);
 }
 
 void box_menu_level (BoxMenu *bm, struct menu_entry *entry)
@@ -429,11 +603,13 @@ void box_menu_level (BoxMenu *bm, struct menu_entry *entry)
 		bm->header_button = NULL;
 	}
 
-	if (entry->parent) {
+	if (entry && entry->parent) {
 		bm->header_button = menu_start_create_button
 			("gtk-up", "Up level",
-			 NULL, NULL);
-		gtk_box_pack_end (GTK_BOX (bm), button, FALSE, TRUE, 0);
+			 G_CALLBACK (box_menu_up_level), entry);
+		g_object_set_data (G_OBJECT (bm->header_button),
+				   "box_menu", (gpointer) bm);
+		gtk_box_pack_end (GTK_BOX (bm), bm->header_button, FALSE, TRUE, 0);
 	}
 
 	buttons = gtk_container_get_children (GTK_CONTAINER (bm->menu_box));
@@ -441,13 +617,17 @@ void box_menu_level (BoxMenu *bm, struct menu_entry *entry)
 		gtk_container_remove (GTK_CONTAINER (bm->menu_box), GTK_WIDGET (iter->data));
 	}
 
-	for (menu_entry = entry ? entry : bm->menu; menu_entry; menu_entry = menu_entry->next) {
+	scrolled_box_reset (SCROLLED_BOX (bm->scrolled_box));
+
+	for (menu_entry = entry ? entry : *bm->menu; menu_entry; menu_entry = menu_entry->next) {
 		switch (menu_entry->type) {
 		case LUNCHER:
 			button = menu_start_create_button_name
 				(menu_entry->icon, menu_entry->name,
 				 G_CALLBACK (box_menu_activate_button), menu_entry,
 				 FALSE);
+			g_object_set_data (G_OBJECT (button), "box_menu",
+					   (gpointer) bm);
 			gtk_box_pack_start (GTK_BOX (bm->menu_box), button, FALSE, TRUE, 0);
 			break;
 		case MENU:
@@ -471,6 +651,7 @@ void box_menu_level (BoxMenu *bm, struct menu_entry *entry)
 			break;
 		}
 	}
+	gtk_widget_show_all (GTK_WIDGET (bm));
 }
 
 void box_menu_root (BoxMenu *bm)
@@ -478,9 +659,19 @@ void box_menu_root (BoxMenu *bm)
 	box_menu_level (bm, NULL);
 }
 
-void box_menu_set_menu (BoxMenu *bm, struct menu_entry *menu)
+void box_menu_set_menu (BoxMenu *bm, struct menu_entry **menu)
 {
 	bm->menu = menu;
+}
+
+void box_menu_set_most_often_menu (BoxMenu *bm, struct menu_entry **menu)
+{
+	bm->pop_apps = menu;
+}
+
+void box_menu_set_type (BoxMenu *bm, short type)
+{
+	bm->type = type;
 }
 
 /******************************************************************************************/
@@ -505,13 +696,27 @@ GtkWidget *get_menu_image (char *icon)
 		if (normal_pixbuf) {
 			image = gtk_image_new_from_pixbuf (normal_pixbuf);
 		} else {
-			image = gtk_image_new_from_pixbuf (def);
+			pixbuf = gdk_pixbuf_new_from_xpm_data (default_xpm);
+			image = gtk_image_new_from_pixbuf (pixbuf);
 		}
 	} else {
-		image = gtk_image_new_from_pixbuf (def);
+		pixbuf = gdk_pixbuf_new_from_xpm_data (default_xpm);
+		image = gtk_image_new_from_pixbuf (pixbuf);
 	}
 
 	return image;
+}
+
+void run_menu_app_cb (GtkWidget *self, gpointer data)
+{
+	struct menu_entry *menu_entry = (struct menu_entry *) data;
+	Menu *menu;
+
+	menu = g_object_get_data (G_OBJECT (self), "menu");
+
+	g_signal_emit_by_name (G_OBJECT (menu), "completed");
+	menu->pop_apps = insert_into_menu (menu->pop_apps, menu_entry);
+	xfce_exec (menu_entry->command, menu_entry->term, FALSE, NULL);
 }
 
 GtkWidget *build_gtk_menu (struct menu_entry *menu, Menu *start)
@@ -535,6 +740,7 @@ GtkWidget *build_gtk_menu (struct menu_entry *menu, Menu *start)
 					   menu->name);
 			g_object_set_data (G_OBJECT (menu_item), "icon-data",
 					   menu->icon);
+			g_object_set_data (G_OBJECT (menu_item), "menu", start);
 
 			image = get_menu_image (menu->icon);
 
@@ -545,8 +751,8 @@ GtkWidget *build_gtk_menu (struct menu_entry *menu, Menu *start)
 					   menu->command);
 			g_signal_connect_after (G_OBJECT (menu_item),
 						"activate",
-						G_CALLBACK (run_menu_app),
-						start);
+						G_CALLBACK (run_menu_app_cb),
+						menu);
 
 			gtk_widget_show (menu_item);
 			gtk_menu_shell_append (GTK_MENU_SHELL (menu_widget),
@@ -916,15 +1122,12 @@ static void private_cb_label_style_set (GtkWidget * widget, GtkStyle * old_style
 	--recursive;
 }
 
-GtkWidget *create_menu_header (gchar *title)
+GtkWidget *create_menu_header_with_label (GtkWidget *label)
 {
-	GtkWidget *label;
 	GtkStyle *style, *labelstyle;
 	GtkWidget *box;
 
 	box = gtk_event_box_new ();
-
-	label = gtk_label_new (title);
 
 	style = gtk_widget_get_style (box);
 	labelstyle = gtk_widget_get_style (label);
@@ -944,6 +1147,15 @@ GtkWidget *create_menu_header (gchar *title)
 	gtk_container_add (GTK_CONTAINER (box), label);
 
 	return box;
+}
+
+GtkWidget *create_menu_header (gchar *title)
+{
+	GtkWidget *label;
+
+	label = gtk_label_new (title);
+
+	return create_menu_header_with_label (label);
 }
 
 static GtkWidget *
@@ -1004,8 +1216,7 @@ GtkWidget *menu_start_create_button_name (char *icon, gchar * text,
 		pixbuf = xfce_icon_theme_load (xfce_icon_theme_get_for_screen (NULL), icon, 16);
 	}
 	if (!pixbuf) {
-		pixbuf = gdk_pixbuf_new_from_file_at_size
-			(ICONDIR "/xfce4_xicon2.png", 16, 16, NULL);
+		pixbuf = gdk_pixbuf_new_from_xpm_data (default_xpm);
 	}
 	image = gtk_image_new_from_pixbuf (pixbuf);
 
@@ -1117,7 +1328,31 @@ create_arrow_button (char *stock_id, char *text)
 	gtk_container_add (GTK_CONTAINER (button), button_hbox);
 	gtk_button_set_relief (GTK_BUTTON (button), GTK_RELIEF_NONE);
 
+	g_object_set_data (G_OBJECT (button), "label", label);
+	g_object_set_data (G_OBJECT (button), "box", button_hbox);
+	g_object_set_data (G_OBJECT (button), "arrow", arrow);
+
 	return button;
+}
+
+void arrow_button_show_arrow (GtkWidget *button, gboolean show)
+{
+	GtkWidget *arrow;
+	GtkWidget *box;
+
+	arrow = g_object_get_data (G_OBJECT (button), "arrow");
+	box = g_object_get_data (G_OBJECT (button), "box");
+
+	if ((show == TRUE && arrow->parent == box)
+	    || (show == FALSE && arrow->parent != box)) {
+		return;
+	}
+	if (show == TRUE) {
+		gtk_box_pack_start (GTK_BOX (box), arrow, FALSE, FALSE, 4);
+	} else {
+		g_object_ref (G_OBJECT (arrow));
+		gtk_container_remove (GTK_CONTAINER (box), arrow);
+	}
 }
 
 static void
@@ -1150,6 +1385,10 @@ menu_init (Menu * menu)
 	for (i = 0; i < COLUMNS_COUNT; i++) {
 		menu->user_actions[i] = NULL;
 	}
+
+	menu->menu_style = TRADITIONAL;
+	menu->menu_shown = FALSE;
+	menu->first_show_menu = TRUE;
 
 	menu->menu_data = NULL;
 
@@ -1261,6 +1500,13 @@ static void free_recent_apps (GList *apps)
 	g_list_free (apps);
 }
 
+void menu_completed (GtkWidget *self, gpointer data)
+{
+	Menu *menu = (Menu *) data;
+
+	g_signal_emit_by_name (G_OBJECT (menu), "completed");
+}
+
 GtkWidget *menu_new ()
 {
 	Menu *menu;
@@ -1271,6 +1517,7 @@ GtkWidget *menu_new ()
 	GtkStyle *style;
 	GtkWidget *separator;
 	GtkWidget *header;
+	gchar *read_file;
 	int i = 0;
 
 	menu = MENU (g_object_new (menu_get_type (), NULL));
@@ -1364,6 +1611,14 @@ GtkWidget *menu_new ()
 	}
 
 	s_rec_apps = get_rec_apps_list (menu);
+	read_file = ms_get_read_file ("recentapps.xml");
+	menu->pop_apps = parse_menu (read_file);
+
+/* 	if (menu->menu_shown && menu->menu_style == MODERN) { */
+		read_file = ms_get_read_file ("menu.xml");
+		menu->menu_data = parse_menu (read_file);
+		g_free (read_file);
+/* 	} */
 
 	/*
 	 * left pane 
@@ -1373,22 +1628,47 @@ GtkWidget *menu_new ()
 
 	menu->rec_app_box = gtk_vbox_new (FALSE, 0);
 
-	menu->app_header = create_menu_header (_("Most often used apps"));
+	if (menu->menu_style == MODERN && menu->menu_shown) {
+		menu->app_menu_header = gtk_label_new (_("Applications menu"));
+	} else {
+		menu->app_menu_header = gtk_label_new (_("Most often used apps"));
+	}
+	menu->app_header = create_menu_header_with_label (menu->app_menu_header);
 	gtk_box_pack_start (GTK_BOX (menu->col_boxes[0]), menu->app_header, FALSE, TRUE, 0);
 
 	repack_rec_apps_buttons (menu);
 
 	menu->rec_app_scroll = scrolled_box_new (menu->rec_app_box);
 
-	gtk_box_pack_start (GTK_BOX (menu->col_boxes[0]), menu->rec_app_scroll, TRUE, TRUE, 0);
+	//gtk_box_pack_start (GTK_BOX (menu->col_boxes[0]), menu->rec_app_scroll, TRUE, TRUE, 0);
+
+	if (menu->menu_shown && menu->menu_style == MODERN) {
+		menu->box_menu = box_menu_new (&menu->menu_data, IN_PLACE);
+	} else {
+		menu->box_menu = box_menu_new (&menu->pop_apps, IN_PLACE);
+	}
+        box_menu_set_most_often_menu (BOX_MENU (menu->box_menu), &menu->pop_apps);
+	g_signal_connect (G_OBJECT (menu->box_menu), "completed",
+			  G_CALLBACK (menu_completed), menu);
+	box_menu_root (BOX_MENU (menu->box_menu));
+	gtk_box_pack_start (GTK_BOX (menu->col_boxes[0]), menu->box_menu, TRUE, TRUE, 0);
 
 	separator = gtk_hseparator_new ();
 	gtk_box_pack_start (GTK_BOX (menu->col_boxes[0]), separator, FALSE, FALSE, 1);
 
-	button = create_arrow_button ("gtk-index", _("Applications"));
-	g_signal_connect (G_OBJECT (button), "clicked",
+	if (menu->menu_style == TRADITIONAL || menu->menu_shown == FALSE) {
+		menu->app_button = create_arrow_button ("gtk-index", _("Applications"));
+	} else {
+		menu->app_button = create_arrow_button ("gtk-index", _("Most often used apps"));
+	}
+	if (menu->menu_style == TRADITIONAL) {
+		arrow_button_show_arrow (menu->app_button, TRUE);
+	} else {
+		arrow_button_show_arrow (menu->app_button, FALSE);
+	}
+	g_signal_connect (G_OBJECT (menu->app_button), "clicked",
 			  G_CALLBACK (show_menu), menu);
-	gtk_box_pack_start (GTK_BOX (menu->col_boxes[0]), button, FALSE, FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (menu->col_boxes[0]), menu->app_button, FALSE, FALSE, 0);
 
 	gtk_box_pack_start (GTK_BOX (menu), menu->col_boxes[0], TRUE, TRUE, 0);
 
@@ -1476,7 +1756,18 @@ static void menu_destroy (GtkObject *object)
 	}
 
 	if (menu->menu_data) {
-		//free_menu_entry (menu->menu_data);
+		free_menu_entry (menu->menu_data);
+		menu->menu_data = NULL;
+	}
+
+	if (menu->pop_apps) {
+		char *save_file;
+
+		save_file = ms_get_save_file ("recentapps.xml");
+		write_menu (menu->pop_apps, save_file);
+		g_free (save_file);
+		free_menu_entry (menu->pop_apps);
+		menu->pop_apps = NULL;
 	}
 
 	free_recent_apps (s_rec_apps);
@@ -1531,12 +1822,32 @@ position_menu (GtkMenu * menu, gint * x, gint * y,
 	}
 }
 
+void set_menu_style (Menu *menu, MenuStyle style)
+{
+	if (menu->menu_style == style) {
+		return;
+	}
+
+	menu->menu_style = style;
+	switch (style) {
+	case TRADITIONAL:
+		arrow_button_show_arrow (menu->app_button, TRUE);
+		box_menu_set_menu (BOX_MENU (menu->box_menu), &menu->pop_apps);
+		break;
+	case MODERN:
+		arrow_button_show_arrow (menu->app_button, FALSE);
+		box_menu_set_menu (BOX_MENU (menu->box_menu), &menu->pop_apps);
+		break;
+	}
+}
+
 void show_menu_widget (GtkWidget *widget)
 {
 	Menu *menu = (Menu *) widget;
 	struct stat fi;
 	char *read_file;
 	int i;
+	GtkWidget *label;
 
 	read_file = ms_get_read_file ("userapps.xml");
 	stat (read_file, &fi);
@@ -1553,6 +1864,39 @@ void show_menu_widget (GtkWidget *widget)
 		get_user_actions (menu);
 		repack_user_buttons (menu, TRUE);
 	}
+
+	read_file = ms_get_read_file ("menu.xml");
+	stat (read_file, &fi);
+	g_free (read_file);
+
+	if (fi.st_mtime > menu->time) {
+		menu->time = fi.st_mtime;
+		if (menu->menu_data) {
+			free_menu_entry (menu->menu_data);
+		}
+		read_file = ms_get_read_file ("menu.xml");
+		menu->menu_data = parse_menu (read_file);
+		g_free (read_file);
+	}
+
+	label = g_object_get_data (G_OBJECT (menu->app_button), "label");
+
+	if (menu->menu_style == MODERN && menu->first_show_menu) {
+		box_menu_set_menu (BOX_MENU (menu->box_menu), &menu->menu_data);
+		menu->menu_shown = TRUE;
+		gtk_label_set_text (GTK_LABEL (menu->app_menu_header),
+				    _("Applications menu"));
+		gtk_label_set_text (GTK_LABEL (label),
+				    _("Most often used apps"));
+	} else {
+		box_menu_set_menu (BOX_MENU (menu->box_menu), &menu->pop_apps);
+		menu->menu_shown = FALSE;
+		gtk_label_set_text (GTK_LABEL (menu->app_menu_header),
+				    _("Most often used apps"));
+		gtk_label_set_text (GTK_LABEL (label),
+				    _("Applications"));
+	}
+	box_menu_root (BOX_MENU (menu->box_menu));
 
 	for (i = 0; i < menu->columns; i++) {
 		gtk_widget_show_all (menu->col_boxes[i]);
@@ -1576,30 +1920,68 @@ static void show_menu (GtkWidget * self, gpointer data)
 	guint32 time;
 	struct stat fi;
 	char *read_file;
+	GtkWidget *label;
 
 	read_file = ms_get_read_file ("menu.xml");
 	stat (read_file, &fi);
 	g_free (read_file);
 
-	if (fi.st_mtime > menu->time) {
-		menu->time = fi.st_mtime;
-		if (menu->menu) {
-			gtk_widget_destroy (menu->menu);
-			//free_menu_entry (menu->menu_data);
+	label = g_object_get_data (G_OBJECT (self), "label");
+
+	switch (menu->menu_style) {
+	case TRADITIONAL:
+		if (fi.st_mtime > menu->time) {
+			menu->time = fi.st_mtime;
+			if (menu->menu) {
+				gtk_widget_destroy (menu->menu);
+				menu->menu = NULL;
+				free_menu_entry (menu->menu_data);
+			}
+			read_file = ms_get_read_file ("menu.xml");
+			menu->menu_data = parse_menu (read_file);
+			g_free (read_file);
 		}
-		menu->menu_data = parse_menu ();
-		menu->menu = build_gtk_menu (menu->menu_data, menu);
 
-		//menu->menu = create_app_menu (menu);
-		g_signal_connect
-			(G_OBJECT (menu->menu), "deactivate",
-			 G_CALLBACK (menu_deactivated), menu);
+		if (!menu->menu) {
+			menu->menu = build_gtk_menu (menu->menu_data, menu);
+
+			g_signal_connect
+				(G_OBJECT (menu->menu), "deactivate",
+				 G_CALLBACK (menu_deactivated), menu);
+		}
+
+		time = gtk_get_current_event_time ();
+		gtk_menu_popup (GTK_MENU (menu->menu), NULL, NULL,
+				(GtkMenuPositionFunc) position_menu,
+				self, 0, time);
+		break;
+	case MODERN:
+		if (menu->menu_shown) {
+			menu->menu_shown = FALSE;
+			gtk_label_set_text (GTK_LABEL (menu->app_menu_header),
+					    _("Most often used apps"));
+			gtk_label_set_text (GTK_LABEL (label),
+					    _("Applications"));
+			box_menu_set_menu (BOX_MENU (menu->box_menu), &menu->pop_apps);
+			box_menu_root (BOX_MENU (menu->box_menu));
+		} else {
+			if (fi.st_mtime > menu->time) {
+				menu->time = fi.st_mtime;
+				if (menu->menu_data) {
+					free_menu_entry (menu->menu_data);
+				}
+				read_file = ms_get_read_file ("menu.xml");
+				menu->menu_data = parse_menu (read_file);
+				g_free (read_file);
+			}
+			menu->menu_shown = TRUE;
+			gtk_label_set_text (GTK_LABEL (menu->app_menu_header),
+					    _("Applications menu"));
+			gtk_label_set_text (GTK_LABEL (label),
+					    _("Most often used apps"));
+			box_menu_set_menu (BOX_MENU (menu->box_menu), &menu->menu_data);
+			box_menu_root (BOX_MENU (menu->box_menu));
+		}
+		break;
 	}
-
-	time = gtk_get_current_event_time ();
-	gtk_menu_popup (GTK_MENU (menu->menu), NULL, NULL,
-			(GtkMenuPositionFunc) position_menu,
-			self, 0, time);
-
-/* 	test (); */
 }

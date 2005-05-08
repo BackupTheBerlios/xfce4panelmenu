@@ -66,6 +66,8 @@ enum {
 
 typedef struct {
 	GtkVBoxClass class;
+
+	void (*completed) (GtkWidget *self, gpointer data);
 } BoxMenuClass;
 
 typedef struct {
@@ -73,7 +75,8 @@ typedef struct {
 
 	short type;
 
-	struct menu_entry *menu;
+	struct menu_entry **menu;
+	struct menu_entry **pop_apps;
 
 	GtkWidget *scrolled_box;
 	GtkWidget *menu_box;
@@ -81,10 +84,11 @@ typedef struct {
 } BoxMenu;
 
 GType box_menu_get_type ();
-GtkWidget *box_menu_new (struct menu_entry *menu, short type);
+GtkWidget *box_menu_new (struct menu_entry **menu, short type);
 void box_menu_root (BoxMenu *bm);
-void box_menu_set_menu (BoxMenu *bm, struct menu_entry *menu);
-void box_menu_set_type (short type);
+void box_menu_set_menu (BoxMenu *bm, struct menu_entry **menu);
+void box_menu_set_most_often_menu (BoxMenu *bm, struct menu_entry **menu);
+void box_menu_set_type (BoxMenu *bm, short type);
 
 /*******************************************************************************/
 
@@ -99,6 +103,11 @@ void box_menu_set_type (short type);
                             MENU_TYPE))
 
 #define COLUMNS_COUNT 6
+
+typedef enum {
+	TRADITIONAL,
+	MODERN
+} MenuStyle;
 
 struct MenuStart;
 
@@ -127,10 +136,20 @@ typedef struct Menu {
 	gchar *term_app;
 	gchar *run_app;
 
+	MenuStyle menu_style;
+	gboolean menu_shown;
+	gboolean first_show_menu;
+
+	GtkWidget *app_menu_header;
+
+	struct menu_entry *pop_apps;
 	struct menu_entry *menu_data;
+	GtkWidget *box_menu;
 
 	GtkWidget *menu;
 	unsigned int time;
+
+	GtkWidget *app_button;
 
 	gboolean grab;
 
@@ -156,5 +175,6 @@ GtkWidget *menu_new ();
 void menu_repack_recent_apps (Menu *menu);
 void menu_repack_user_apps (Menu *menu);
 void show_menu_widget (GtkWidget *widget);
+void set_menu_style (Menu *menu, MenuStyle style);
 
 #endif /* _MENU_H */

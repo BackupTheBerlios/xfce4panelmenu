@@ -96,22 +96,22 @@ static void fs_tab_class_init (FsTabWidgetClass *klass)
 	object_class = (GObjectClass *) klass;
 
 	fs_tab_signals[F_COMPLETED] =
-			g_signal_new ("completed",
-				      G_OBJECT_CLASS_TYPE (object_class),
-				      G_SIGNAL_RUN_FIRST,
-				      G_STRUCT_OFFSET (FsTabWidgetClass,
-						       completed), NULL, NULL,
-				      g_cclosure_marshal_VOID__VOID,
-				      G_TYPE_NONE, 0);
+		g_signal_new ("completed",
+			      G_OBJECT_CLASS_TYPE (object_class),
+			      G_SIGNAL_RUN_FIRST,
+			      G_STRUCT_OFFSET (FsTabWidgetClass,
+					       completed), NULL, NULL,
+			      g_cclosure_marshal_VOID__VOID,
+			      G_TYPE_NONE, 0);
 
 	fs_tab_signals[F_GETGRAB] =
-			g_signal_new ("getgrab",
-				      G_OBJECT_CLASS_TYPE (object_class),
-				      G_SIGNAL_RUN_FIRST,
-				      G_STRUCT_OFFSET (FsTabWidgetClass,
-						       getgrab), NULL, NULL,
-				      g_cclosure_marshal_VOID__VOID,
-				      G_TYPE_NONE, 0);
+		g_signal_new ("getgrab",
+			      G_OBJECT_CLASS_TYPE (object_class),
+			      G_SIGNAL_RUN_FIRST,
+			      G_STRUCT_OFFSET (FsTabWidgetClass,
+					       getgrab), NULL, NULL,
+			      g_cclosure_marshal_VOID__VOID,
+			      G_TYPE_NONE, 0);
 }
 
 static void fs_tab_init (FsTabWidget *ft)
