@@ -120,6 +120,12 @@ struct menu_start
 	GtkWidget *button;
 	GtkWidget *menustart;
 
+	gchar *icon;
+	GtkWidget *image;
+	GtkWidget *box;
+
+	GtkWidget *icon_entry;
+
 	GtkWidget *width_spin;
 	GtkWidget *height_spin;
 
@@ -209,15 +215,17 @@ gboolean create_menustart_control (Control *control)
 	menustart->menustart = menu_start_new ();
 	gtk_widget_set_size_request (menustart->menustart, 400, 480);
 
+	menustart->icon = NULL;
+
 	menustart->button = gtk_button_new ();
 	gtk_button_set_relief(GTK_BUTTON (menustart->button), GTK_RELIEF_NONE);
 	read_file = g_strdup (ICONDIR "/xfce4_xicon.png");
 	pixbuf = gdk_pixbuf_new_from_file_at_size (read_file, 24, 24, NULL);
 	g_free (read_file);
- 	image = gtk_image_new_from_pixbuf (pixbuf);
-	button_hbox = gtk_hbox_new (FALSE, 5);
-	gtk_box_pack_start (GTK_BOX (button_hbox), image, FALSE, FALSE, 0);
-	gtk_container_add (GTK_CONTAINER (menustart->button), button_hbox);
+ 	menustart->image = gtk_image_new_from_pixbuf (pixbuf);
+	menustart->box = gtk_hbox_new (FALSE, 5);
+	gtk_box_pack_start (GTK_BOX (menustart->box), menustart->image, FALSE, FALSE, 0);
+	gtk_container_add (GTK_CONTAINER (menustart->button), menustart->box);
 	g_signal_connect (G_OBJECT (menustart->button), "clicked",
 			  G_CALLBACK (button_clicked), menustart->menustart);
 
@@ -230,6 +238,34 @@ gboolean create_menustart_control (Control *control)
 	gtk_widget_show_all (menustart->button);
 
 	return TRUE;
+}
+
+void set_menustart_icon (struct menu_start *menustart, const gchar *path)
+{
+	GdkPixbuf *pixbuf;
+
+	if (menustart->icon) {
+		g_free (menustart->icon);
+		menustart->icon = NULL;
+	}
+	gtk_container_remove (GTK_CONTAINER (menustart->box), menustart->image);
+
+	if (g_file_test (path, G_FILE_TEST_EXISTS)) {
+		pixbuf = gdk_pixbuf_new_from_file_at_size (path, 24, 24, NULL);
+		if (pixbuf) {
+			menustart->icon = g_strdup (path);
+			menustart->image = gtk_image_new_from_pixbuf (pixbuf);
+			gtk_box_pack_start (GTK_BOX (menustart->box), menustart->image, FALSE, FALSE, 0);
+			gtk_widget_show_all (menustart->box);
+
+			return;
+		}
+	}
+
+	pixbuf = gdk_pixbuf_new_from_file_at_size (ICONDIR "/xfce4_xicon.png", 24, 24, NULL);
+	menustart->image = gtk_image_new_from_pixbuf (pixbuf);
+	gtk_box_pack_start (GTK_BOX (menustart->box), menustart->image, FALSE, FALSE, 0);
+	gtk_widget_show_all (menustart->box);
 }
 
 static void menustart_free (Control * control)
@@ -379,19 +415,17 @@ GtkWidget *init_general_page (Control *ctrl)
 
 	table = gtk_table_new (4, 3, TRUE);
 
-
-	label = gtk_label_new (_("Items count in recent apps menu"));
+	label = gtk_label_new (_("Menu Icon"));
 	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
-	gtk_table_attach (GTK_TABLE (table), label, 0, 2, 0, 1,
-			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
-	ms->recent_count = gtk_spin_button_new (NULL, 1, 0);
-	gtk_spin_button_set_range (GTK_SPIN_BUTTON (ms->recent_count), 1, 128);
-	gtk_spin_button_set_increments (GTK_SPIN_BUTTON (ms->recent_count), 1, 1);
-	gtk_spin_button_set_value (GTK_SPIN_BUTTON (ms->recent_count),
-				   MENU (menu)->r_apps_count);
-	gtk_table_attach (GTK_TABLE (table), ms->recent_count, 2, 3, 0, 1,
+	gtk_table_attach (GTK_TABLE (table), label, 0, 1, 0, 1,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
 
+	ms->icon_entry = gtk_entry_new ();
+	if (ms->icon) {
+		gtk_entry_set_text (GTK_ENTRY (ms->icon_entry), ms->icon);
+	}
+	gtk_table_attach (GTK_TABLE (table), ms->icon_entry, 1, 3, 0, 1,
+			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
 
 	label = gtk_label_new (_("Switch User Command"));
 	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
@@ -496,9 +530,21 @@ GtkWidget *init_menu_page (Control *ctrl)
 	gtk_container_set_border_width (GTK_CONTAINER (vbox), 5);
 	table = gtk_table_new (4, 3, TRUE);
 
+	label = gtk_label_new (_("Items count in recent apps menu"));
+	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
+	gtk_table_attach (GTK_TABLE (table), label, 0, 2, 0, 1,
+			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
+	ms->recent_count = gtk_spin_button_new (NULL, 1, 0);
+	gtk_spin_button_set_range (GTK_SPIN_BUTTON (ms->recent_count), 1, 128);
+	gtk_spin_button_set_increments (GTK_SPIN_BUTTON (ms->recent_count), 1, 1);
+	gtk_spin_button_set_value (GTK_SPIN_BUTTON (ms->recent_count),
+				   MENU (menu)->r_apps_count);
+	gtk_table_attach (GTK_TABLE (table), ms->recent_count, 2, 3, 0, 1,
+			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
+
 	label = gtk_label_new (_("For applications menu use:"));
 	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
-	gtk_table_attach (GTK_TABLE (table), label, 0, 3, 0, 1,
+	gtk_table_attach (GTK_TABLE (table), label, 0, 3, 1, 2,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
 
 	ms->menu_trad = gtk_radio_button_new_with_label
@@ -506,7 +552,7 @@ GtkWidget *init_menu_page (Control *ctrl)
 	if (menu->menu_style == TRADITIONAL) {
 		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (ms->menu_trad), TRUE);
 	}
-	gtk_table_attach (GTK_TABLE (table), ms->menu_trad, 1, 3, 1, 2,
+	gtk_table_attach (GTK_TABLE (table), ms->menu_trad, 1, 3, 2, 3,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
 
 	ms->menu_mod = gtk_radio_button_new_with_label_from_widget
@@ -514,7 +560,7 @@ GtkWidget *init_menu_page (Control *ctrl)
 	if (menu->menu_style == MODERN) {
 		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (ms->menu_mod), TRUE);
 	}
-	gtk_table_attach (GTK_TABLE (table), ms->menu_mod, 1, 3, 2, 3,
+	gtk_table_attach (GTK_TABLE (table), ms->menu_mod, 1, 3, 3, 4,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
 
 	gtk_box_pack_start (GTK_BOX (vbox), table, FALSE, TRUE, 3);
@@ -569,6 +615,10 @@ apply_options (gpointer data)
 		g_free (browser->mime_command);
 		browser->mime_command = app;
 	}
+
+	app = g_strdup (gtk_entry_get_text (GTK_ENTRY (ms->icon_entry)));
+	set_menustart_icon (ms, app);
+	g_free (app);
 
 	app = g_strdup (gtk_entry_get_text (GTK_ENTRY (ms->lock_entry)));
 	if (MENU_START (ms->menustart)->lock_app)
@@ -650,6 +700,12 @@ read_conf (Control *control, xmlNodePtr node)
 			menu->r_apps_count = count;
 /* 			menu_repack_recent_apps (menu); */
 		}
+	}
+
+	value = xmlGetProp(node, (const xmlChar *) "menu_icon");
+	if (value) {
+		set_menustart_icon (ms, value);
+		g_free (value);
 	}
 
 	value = xmlGetProp(node, (const xmlChar *) "lock_app");
@@ -746,6 +802,10 @@ write_conf (Control *control, xmlNodePtr node)
 
 	sprintf (count, "%d", menu->columns);
 	xmlSetProp(node, (const xmlChar *) "columns", count);
+
+	if (ms->icon) {
+		xmlSetProp (node, "menu_icon", ms->icon);
+	}
 
 	xmlSetProp(node,
 		   (const xmlChar *) "lock_app",
