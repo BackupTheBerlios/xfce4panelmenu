@@ -593,6 +593,9 @@ apply_options (gpointer data)
 	value = gtk_spin_button_get_value (GTK_SPIN_BUTTON (ms->height_spin));
 	MENU_START (ms->menustart)->height = value;
 
+	gtk_widget_set_size_request (ms->menustart,
+				     MENU_START (ms->menustart)->width, MENU_START (ms->menustart)->height);
+
 	check = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (ms->mime_check));
 	browser->mime_check = check;
 
