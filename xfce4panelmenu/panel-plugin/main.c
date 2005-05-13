@@ -125,6 +125,7 @@ struct menu_start
 	GtkWidget *box;
 
 	GtkWidget *icon_entry;
+	GtkWidget *icon_button;
 
 	GtkWidget *width_spin;
 	GtkWidget *height_spin;
@@ -420,11 +421,18 @@ GtkWidget *init_general_page (Control *ctrl)
 	gtk_table_attach (GTK_TABLE (table), label, 0, 1, 0, 1,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
 
-	ms->icon_entry = gtk_entry_new ();
+/* 	ms->icon_entry = gtk_entry_new (); */
+/* 	if (ms->icon) { */
+/* 		gtk_entry_set_text (GTK_ENTRY (ms->icon_entry), ms->icon); */
+/* 	} */
+/* 	gtk_table_attach (GTK_TABLE (table), ms->icon_entry, 1, 2, 0, 1, */
+/* 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1); */
+
+	ms->icon_button = gtk_file_chooser_button_new (_("Select file"), GTK_FILE_CHOOSER_ACTION_OPEN);
 	if (ms->icon) {
-		gtk_entry_set_text (GTK_ENTRY (ms->icon_entry), ms->icon);
+		gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (ms->icon_button), ms->icon);
 	}
-	gtk_table_attach (GTK_TABLE (table), ms->icon_entry, 1, 3, 0, 1,
+	gtk_table_attach (GTK_TABLE (table), ms->icon_button, 1, 3, 0, 1,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
 
 	label = gtk_label_new (_("Switch User Command"));
@@ -619,7 +627,11 @@ apply_options (gpointer data)
 		browser->mime_command = app;
 	}
 
-	app = g_strdup (gtk_entry_get_text (GTK_ENTRY (ms->icon_entry)));
+/* 	app = g_strdup (gtk_entry_get_text (GTK_ENTRY (ms->icon_entry))); */
+/* 	set_menustart_icon (ms, app); */
+/* 	g_free (app); */
+
+	app = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (ms->icon_button));
 	set_menustart_icon (ms, app);
 	g_free (app);
 
