@@ -124,7 +124,6 @@ struct menu_start
 	GtkWidget *image;
 	GtkWidget *box;
 
-	GtkWidget *icon_entry;
 	GtkWidget *icon_button;
 
 	GtkWidget *width_spin;
@@ -143,11 +142,8 @@ struct menu_start
 
 	GtkWidget *user_count;
 	GtkWidget *recent_count;
-	GtkWidget *set_entry;
 	GtkWidget *lock_entry;
 	GtkWidget *switch_entry;
-	GtkWidget *term_entry;
-	GtkWidget *run_entry;
 
 	GtkWidget *menu_trad;
 	GtkWidget *menu_mod;
@@ -421,13 +417,6 @@ GtkWidget *init_general_page (Control *ctrl)
 	gtk_table_attach (GTK_TABLE (table), label, 0, 1, 0, 1,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
 
-/* 	ms->icon_entry = gtk_entry_new (); */
-/* 	if (ms->icon) { */
-/* 		gtk_entry_set_text (GTK_ENTRY (ms->icon_entry), ms->icon); */
-/* 	} */
-/* 	gtk_table_attach (GTK_TABLE (table), ms->icon_entry, 1, 2, 0, 1, */
-/* 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1); */
-
 	ms->icon_button = gtk_file_chooser_button_new (_("Select file"), GTK_FILE_CHOOSER_ACTION_OPEN);
 	if (ms->icon) {
 		gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (ms->icon_button), ms->icon);
@@ -593,8 +582,6 @@ apply_options (gpointer data)
 	value = gtk_spin_button_get_value (GTK_SPIN_BUTTON (ms->recent_count));
 	menu->r_apps_count = (int) value;
 
-/*  	menu_repack_recent_apps (menu); */
-
 	value = gtk_spin_button_get_value (GTK_SPIN_BUTTON (ms->width_spin));
 	MENU_START (ms->menustart)->width = value;
 
@@ -626,10 +613,6 @@ apply_options (gpointer data)
 		g_free (browser->mime_command);
 		browser->mime_command = app;
 	}
-
-/* 	app = g_strdup (gtk_entry_get_text (GTK_ENTRY (ms->icon_entry))); */
-/* 	set_menustart_icon (ms, app); */
-/* 	g_free (app); */
 
 	app = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (ms->icon_button));
 	set_menustart_icon (ms, app);
@@ -713,7 +696,6 @@ read_conf (Control *control, xmlNodePtr node)
 		int count = atoi (value);
 		if (menu->r_apps_count != count) {
 			menu->r_apps_count = count;
-/* 			menu_repack_recent_apps (menu); */
 		}
 	}
 

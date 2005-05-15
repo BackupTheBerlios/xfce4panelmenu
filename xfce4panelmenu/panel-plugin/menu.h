@@ -74,6 +74,7 @@ typedef struct {
 	GtkVBox box;
 
 	short type;
+	int limit;
 
 	struct menu_entry **menu;
 	struct menu_entry **pop_apps;
@@ -89,6 +90,7 @@ void box_menu_root (BoxMenu *bm);
 void box_menu_set_menu (BoxMenu *bm, struct menu_entry **menu);
 void box_menu_set_most_often_menu (BoxMenu *bm, struct menu_entry **menu);
 void box_menu_set_type (BoxMenu *bm, short type);
+void box_menu_set_limit (BoxMenu *bm, int limit);
 
 /*******************************************************************************/
 
@@ -132,9 +134,6 @@ typedef struct Menu {
 	GtkWidget *col_boxes[COLUMNS_COUNT];
 
 	int r_apps_count;
-	gchar *set_app;
-	gchar *term_app;
-	gchar *run_app;
 
 	MenuStyle menu_style;
 	gboolean menu_shown;

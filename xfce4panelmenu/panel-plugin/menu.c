@@ -96,8 +96,6 @@ struct menu_entry {
 static char *fstab_path = "/etc/fstab";
 static char *mtab_path = "/etc/mtab";
 
-static GList *s_rec_apps;
-
 static void menu_class_init (MenuClass * klass);
 static void menu_init (Menu * menu);
 
@@ -105,7 +103,6 @@ static void show_menu                           (GtkWidget * self, gpointer data
 static void private_cb_eventbox_style_set       (GtkWidget * widget,
 						 GtkStyle * old_style);
 static void run_menu_app                        (GtkWidget * self, gpointer data);
-static void repack_rec_apps_buttons             (Menu *menu);
 static void repack_user_buttons                 (Menu *menu, gboolean destroy);
 static void menu_destroy                        (GtkObject *object);
 
@@ -538,6 +535,8 @@ static void box_menu_init (BoxMenu* bm)
 {
 	bm->header_button = NULL;
 
+	bm->limit = 0;
+
 	bm->menu_box = gtk_vbox_new (FALSE, 0);
 	bm->scrolled_box = scrolled_box_new (bm->menu_box);
 
@@ -597,6 +596,7 @@ void box_menu_level (BoxMenu *bm, struct menu_entry *entry)
 	struct menu_entry *menu_entry;
 	GList *buttons, *iter;
 	GtkWidget *button;
+	int i = 1;
 
 	if (bm->header_button) {
 		gtk_container_remove (GTK_CONTAINER (bm), bm->header_button);
@@ -605,7 +605,7 @@ void box_menu_level (BoxMenu *bm, struct menu_entry *entry)
 
 	if (entry && entry->parent) {
 		bm->header_button = menu_start_create_button
-			("gtk-up", "Up level",
+			("gtk-go-up", "Up level",
 			 G_CALLBACK (box_menu_up_level), entry);
 		g_object_set_data (G_OBJECT (bm->header_button),
 				   "box_menu", (gpointer) bm);
@@ -620,6 +620,11 @@ void box_menu_level (BoxMenu *bm, struct menu_entry *entry)
 	scrolled_box_reset (SCROLLED_BOX (bm->scrolled_box));
 
 	for (menu_entry = entry ? entry : *bm->menu; menu_entry; menu_entry = menu_entry->next) {
+		if (bm->limit && i > bm->limit) {
+			break;
+		}
+		i++;
+
 		switch (menu_entry->type) {
 		case LUNCHER:
 			button = menu_start_create_button_name
@@ -672,6 +677,14 @@ void box_menu_set_most_often_menu (BoxMenu *bm, struct menu_entry **menu)
 void box_menu_set_type (BoxMenu *bm, short type)
 {
 	bm->type = type;
+}
+
+void box_menu_set_limit (BoxMenu *bm, int limit)
+{
+	if (limit < 0) {
+		bm->limit = 0;
+	}
+	bm->limit = limit;
 }
 
 /******************************************************************************************/
@@ -798,14 +811,6 @@ GtkWidget *build_gtk_menu (struct menu_entry *menu, Menu *start)
 	return menu_widget;
 }
 
-int rec_apps_cmp (gconstpointer a, gconstpointer b)
-{
-	struct rec_app *A = (struct rec_app *) a;
-	struct rec_app *B = (struct rec_app *) b;
-
-	return B->count - A->count;
-}
-
 static void get_user_actions (Menu *menu)
 {
 	GList *actions = NULL;
@@ -876,145 +881,6 @@ static void free_user_actions (GList *actions)
 	}
 }
 
-GList *get_rec_apps_list (Menu *menu)
-{
-	GList *apps = NULL;
-	xmlDocPtr doc = NULL;
-	xmlNodePtr node = NULL;
-	char *read_file;
-	GtkTooltips *tooltips;
-
-	read_file = ms_get_read_file ("recentapps.xml");
-	doc = xmlParseFile (read_file);
-	node = xmlDocGetRootElement (doc);
-
-	tooltips = gtk_tooltips_new ();
-	gtk_tooltips_set_delay (tooltips, 2000);
-
-
-	for (node = node->children; node; node = node->next) {
-		if (xmlStrEqual (node->name, "app")) {
-			struct rec_app *app;
-			char *prop;
-
-			REC_APP_INIT (app);
-
-			app->name = xmlGetProp (node, "name");
-			app->app = xmlGetProp (node, "cmd");
-			app->icon = xmlGetProp (node, "icon");
-			if (app->icon && (strlen (app->icon) == 0)) {
-				free (app->icon);
-				app->icon = NULL;
-			}
-			prop = xmlGetProp (node, "count");
-			app->count = atoi (prop);
-
-			app->button = menu_start_create_button_name 
-				(app->icon, app->name, G_CALLBACK (run_menu_app), menu, FALSE);
-			g_object_set_data (G_OBJECT (app->button), "name-data", app->name);
-			g_object_set_data (G_OBJECT (app->button), "app", app->app);
-			g_object_set_data (G_OBJECT (app->button), "app-data", app);
-			g_object_set_data (G_OBJECT (app->button), "icon-data", app->icon);
-
-			gtk_tooltips_set_tip (GTK_TOOLTIPS (tooltips), app->button,
-					      app->name, NULL);
-			free (prop);
-			apps = g_list_append (apps, app);
-		}
-	}
-
-	xmlFreeDoc (doc);
-
-	if (apps)
-		apps = g_list_sort (apps, rec_apps_cmp);
-
-	return apps;
-}
-
-void
-write_rec_apps_list (GList * apps)
-{
-	FILE *file;
-	char *save_file;
-	xmlDocPtr doc = NULL;
-	xmlNodePtr node = NULL, root_node = NULL;
-	char count[6];
-
-	save_file = ms_get_save_file ("recentapps.xml");
-
-	doc = xmlNewDoc(BAD_CAST "1.0");
-	root_node = xmlNewNode(NULL, BAD_CAST "apps");
-	xmlDocSetRootElement(doc, root_node);
-
-	for (; apps; apps = apps->next) {
-		struct rec_app *app = (struct rec_app *) apps->data;
-
-		node = xmlNewChild(root_node, NULL, BAD_CAST "app", NULL);
-
-		xmlSetProp(node, (const xmlChar *) "name", app->name);
-		xmlSetProp(node, (const xmlChar *) "cmd", app->app);
-		if (app->icon)
-			xmlSetProp(node, (const xmlChar *) "icon", app->icon);
-
-		sprintf (count, "%d", app->count);
-		xmlSetProp(node, (const xmlChar *) "count", count);
-	}
-
-	xmlSaveFormatFile (save_file, doc, 1);
-}
-
-GList *
-update_rec_app_list (GList * apps, GObject * obj, Menu *menu)
-{
-	GList *tmp = apps;
-	struct rec_app *app;
-	char *data;
-	char *cmd = g_object_get_data (obj, "app");
-	GtkTooltips *tooltips;
-
-	for (; tmp; tmp = tmp->next) {
-		if (strcmp (((struct rec_app *) tmp->data)->app, cmd) == 0) {
-			((struct rec_app *) tmp->data)->count++;
-			apps = g_list_sort (apps, rec_apps_cmp);
-			repack_rec_apps_buttons (menu);
-			return apps;
-		}
-	}
-
-	REC_APP_INIT (app);
-	if ((data = g_object_get_data (obj, "name-data")))
-		app->name = strdup (data);
-	if ((data = g_object_get_data (obj, "app")))
-		app->app = strdup (data);
-	if ((data = g_object_get_data (obj, "icon-data")))
-		app->icon = strdup (data);
-
-	tooltips = gtk_tooltips_new ();
-	gtk_tooltips_set_delay (tooltips, 2000);
-
-	app->button = menu_start_create_button_name (app->icon, app->name,
-						     G_CALLBACK
-						     (run_menu_app), menu, FALSE);
-	g_object_set_data (G_OBJECT (app->button), "name-data", app->name);
-	g_object_set_data (G_OBJECT (app->button), "app", app->app);
-	g_object_set_data (G_OBJECT (app->button), "icon-data", app->icon);
-	
-	gtk_tooltips_set_tip (GTK_TOOLTIPS (tooltips), app->button,
-			      app->name, NULL);
-
-	apps = g_list_append (apps, app);
-	apps = g_list_sort (apps, rec_apps_cmp);
-
-	repack_rec_apps_buttons (menu);
-
-	return apps;
-}
-
-void menu_repack_recent_apps (Menu *menu)
-{
-	repack_rec_apps_buttons (menu);
-}
-
 void menu_repack_user_apps (Menu *menu)
 {
 	repack_user_buttons (menu, TRUE);
@@ -1024,64 +890,6 @@ static void
 run_app (char *app)
 {
 	xfce_exec(app, FALSE, FALSE, NULL);
-}
-
-static void
-run_menu_app (GtkWidget * self, gpointer data)
-{
-	Menu *menu = (Menu *) data;
-	char *app;
-	struct rec_app *app_data;
-
-	g_signal_emit_by_name (menu, "completed");
-
-	app = g_object_get_data (G_OBJECT (self), "app");
-	app_data = (struct rec_app *) g_object_get_data (G_OBJECT (self), "app-data");
-
-	if (GTK_IS_BUTTON (self)) {
-		gtk_widget_destroy (app_data->button);
-
-		app_data->button = menu_start_create_button_name
-			(app_data->icon, app_data->name, G_CALLBACK (run_menu_app), menu, FALSE);
-		g_object_set_data (G_OBJECT (app_data->button), "name-data", app_data->name);
-		g_object_set_data (G_OBJECT (app_data->button), "app", app_data->app);
-		g_object_set_data (G_OBJECT (app_data->button), "app-data", app_data);
-		g_object_set_data (G_OBJECT (app_data->button), "icon-data", app_data->icon);
-	}
-
-	s_rec_apps = update_rec_app_list (s_rec_apps, G_OBJECT (self), menu);
-	write_rec_apps_list (s_rec_apps);
-
-	run_app (app);
-}
-
-static void set_button_press (GtkWidget *self, gpointer data)
-{
-	Menu *menu = (Menu *) data;
-
-	g_signal_emit_by_name (menu, "completed");
-
-	run_app (menu->set_app);
-}
-
-static void
-menu_run_app (GtkWidget * self, gpointer data)
-{
-	Menu *menu = (Menu *) data;
-
-	g_signal_emit_by_name (menu, "completed");
-
-	run_app (menu->run_app);
-}
-
-static void
-menu_term_app (GtkWidget * self, gpointer data)
-{
-	Menu *menu = (Menu *) data;
-
-	g_signal_emit_by_name (menu, "completed");
-
-	run_app (menu->term_app);
 }
 
 static void
@@ -1395,9 +1203,6 @@ menu_init (Menu * menu)
 	menu->columns = 2;
 
 	menu->r_apps_count = 10;
-	menu->set_app = g_strdup ("xfce-setting-show");
-	menu->run_app = g_strdup ("xfrun4");
-	menu->term_app = g_strdup ("xfterm4");
 
 	gtk_box_set_homogeneous (GTK_BOX (menu), TRUE);
 	gtk_box_set_spacing (GTK_BOX (menu), 1);
@@ -1450,28 +1255,6 @@ static void repack_user_buttons (Menu *menu, gboolean destroy)
 
 			gtk_box_pack_start (GTK_BOX (menu->column_boxes[i]), button, FALSE, FALSE, 0);
 		}
-	}
-}
-
-static void
-repack_rec_apps_buttons (Menu *menu)
-{
-	GList *old_list, *tmp;
-	int i = 0;
-
-	old_list = gtk_container_get_children (GTK_CONTAINER (menu->rec_app_box));
-	for (tmp = old_list; tmp; tmp = tmp->next) {
-		if (g_object_get_data (tmp->data, "app")) {
-			g_object_ref (tmp->data);
-			gtk_container_remove (GTK_CONTAINER (menu->rec_app_box),
-					      GTK_WIDGET (tmp->data));
-		}
-	}
-	for (tmp = s_rec_apps; tmp && (i < menu->r_apps_count); tmp = tmp->next) {
-		struct rec_app *app = (struct rec_app *) tmp->data;
-
-		gtk_box_pack_start (GTK_BOX (menu->rec_app_box), app->button, FALSE, TRUE, 0);
-		i++;
 	}
 }
 
@@ -1610,7 +1393,6 @@ GtkWidget *menu_new ()
 		g_free (save_file);
 	}
 
-	s_rec_apps = get_rec_apps_list (menu);
 	read_file = ms_get_read_file ("recentapps.xml");
 	menu->pop_apps = parse_menu (read_file);
 
@@ -1635,8 +1417,6 @@ GtkWidget *menu_new ()
 	}
 	menu->app_header = create_menu_header_with_label (menu->app_menu_header);
 	gtk_box_pack_start (GTK_BOX (menu->col_boxes[0]), menu->app_header, FALSE, TRUE, 0);
-
-	repack_rec_apps_buttons (menu);
 
 	menu->rec_app_scroll = scrolled_box_new (menu->rec_app_box);
 
@@ -1735,21 +1515,6 @@ static void menu_destroy (GtkObject *object)
 
 	menu = MENU (object);
 
-	if (menu->set_app) {
-		g_free (menu->set_app);
-		menu->set_app = NULL;
-	}
-
-	if (menu->term_app) {
-		g_free (menu->term_app);
-		menu->term_app = NULL;
-	}
-
-	if (menu->run_app) {
-		g_free (menu->run_app);
-		menu->run_app = NULL;
-	}
-
 	if (menu->menu) {
 		gtk_widget_destroy (menu->menu);
 		menu->menu = NULL;
@@ -1769,9 +1534,6 @@ static void menu_destroy (GtkObject *object)
 		free_menu_entry (menu->pop_apps);
 		menu->pop_apps = NULL;
 	}
-
-	free_recent_apps (s_rec_apps);
-	s_rec_apps = NULL;
 
 	for (i = 1; i < COLUMNS_COUNT; i++){
 		free_user_actions (menu->user_actions[i]);
@@ -1883,6 +1645,7 @@ void show_menu_widget (GtkWidget *widget)
 
 	if (menu->menu_style == MODERN && menu->first_show_menu) {
 		box_menu_set_menu (BOX_MENU (menu->box_menu), &menu->menu_data);
+		box_menu_set_limit (BOX_MENU (menu->box_menu), 0);
 		menu->menu_shown = TRUE;
 		gtk_label_set_text (GTK_LABEL (menu->app_menu_header),
 				    _("Applications menu"));
@@ -1890,6 +1653,7 @@ void show_menu_widget (GtkWidget *widget)
 				    _("Most often used apps"));
 	} else {
 		box_menu_set_menu (BOX_MENU (menu->box_menu), &menu->pop_apps);
+		box_menu_set_limit (BOX_MENU (menu->box_menu), menu->r_apps_count);
 		menu->menu_shown = FALSE;
 		gtk_label_set_text (GTK_LABEL (menu->app_menu_header),
 				    _("Most often used apps"));
@@ -1963,6 +1727,7 @@ static void show_menu (GtkWidget * self, gpointer data)
 			gtk_label_set_text (GTK_LABEL (label),
 					    _("Applications"));
 			box_menu_set_menu (BOX_MENU (menu->box_menu), &menu->pop_apps);
+			box_menu_set_limit (BOX_MENU (menu->box_menu), menu->r_apps_count);
 			box_menu_root (BOX_MENU (menu->box_menu));
 		} else {
 			if (fi.st_mtime > menu->time) {
@@ -1980,6 +1745,7 @@ static void show_menu (GtkWidget * self, gpointer data)
 			gtk_label_set_text (GTK_LABEL (label),
 					    _("Most often used apps"));
 			box_menu_set_menu (BOX_MENU (menu->box_menu), &menu->menu_data);
+			box_menu_set_limit (BOX_MENU (menu->box_menu), 0);
 			box_menu_root (BOX_MENU (menu->box_menu));
 		}
 		break;
