@@ -147,6 +147,9 @@ struct menu_start
 
 	GtkWidget *menu_trad;
 	GtkWidget *menu_mod;
+
+	GtkWidget *menu_first;
+	GtkWidget *menu_second;
 };
 
 void button_clicked (GtkWidget *self, gpointer data)
@@ -512,6 +515,19 @@ GtkWidget *init_general_page (Control *ctrl)
 	return vbox;
 }
 
+void menu_style_toggled (GtkWidget *self, gpointer data)
+{
+	struct menu_start *ms = (struct menu_start *) data;
+
+	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (ms->menu_trad))) {
+		gtk_widget_set_sensitive (ms->menu_first, FALSE);
+		gtk_widget_set_sensitive (ms->menu_second, FALSE);
+	} else {
+		gtk_widget_set_sensitive (ms->menu_first, TRUE);
+		gtk_widget_set_sensitive (ms->menu_second, TRUE);
+	}
+}
+
 GtkWidget *init_menu_page (Control *ctrl)
 {
 	GtkWidget *vbox;
@@ -549,7 +565,7 @@ GtkWidget *init_menu_page (Control *ctrl)
 	if (menu->menu_style == TRADITIONAL) {
 		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (ms->menu_trad), TRUE);
 	}
-	gtk_table_attach (GTK_TABLE (table), ms->menu_trad, 1, 3, 2, 3,
+	gtk_table_attach (GTK_TABLE (table), ms->menu_trad, 1, 3, 1, 2,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
 
 	ms->menu_mod = gtk_radio_button_new_with_label_from_widget
@@ -557,8 +573,32 @@ GtkWidget *init_menu_page (Control *ctrl)
 	if (menu->menu_style == MODERN) {
 		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (ms->menu_mod), TRUE);
 	}
-	gtk_table_attach (GTK_TABLE (table), ms->menu_mod, 1, 3, 3, 4,
+	gtk_table_attach (GTK_TABLE (table), ms->menu_mod, 1, 3, 2, 3,
 			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
+
+	label = gtk_label_new (_("First show:"));
+	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
+	gtk_table_attach (GTK_TABLE (table), label, 0, 3, 3, 4,
+			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
+
+	ms->menu_first = gtk_radio_button_new_with_label
+		(NULL, _("Applications menu"));
+	if (menu->first_show_menu) {
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (ms->menu_first), TRUE);
+	}
+	gtk_table_attach (GTK_TABLE (table), ms->menu_first, 1, 3, 3, 4,
+			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
+
+	ms->menu_second = gtk_radio_button_new_with_label_from_widget
+		(GTK_RADIO_BUTTON (ms->menu_first), _("Most often used apps menu"));
+	if (!menu->first_show_menu) {
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (ms->menu_second), TRUE);
+	}
+	gtk_table_attach (GTK_TABLE (table), ms->menu_second, 1, 3, 4, 5,
+			  GTK_FILL | GTK_EXPAND, GTK_FILL, 1, 1);
+
+	g_signal_connect (G_OBJECT (ms->menu_trad), "toggled", G_CALLBACK (menu_style_toggled), ms);
+	menu_style_toggled (ms->menu_trad, ms);
 
 	gtk_box_pack_start (GTK_BOX (vbox), table, FALSE, TRUE, 3);
 
@@ -633,6 +673,13 @@ apply_options (gpointer data)
 		set_menu_style (menu, TRADITIONAL);
 	} else {
 		set_menu_style (menu, MODERN);
+	}
+
+	check = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (ms->menu_first));
+	if (check) {
+		menu->first_show_menu = TRUE;
+	} else {
+		menu->first_show_menu = FALSE;
 	}
 }
 
@@ -759,6 +806,16 @@ read_conf (Control *control, xmlNodePtr node)
 	if (value) {
 		xmlFree (value);
 	}
+
+	value = xmlGetProp(node, (const xmlChar *) "menu_first");
+	if (value && strcmp (value, "true") == 0) {
+		menu->first_show_menu = TRUE;
+	} else {
+		menu->first_show_menu = FALSE;
+	}
+	if (value) {
+		xmlFree (value);
+	}
 }
 
 static void
@@ -819,6 +876,12 @@ write_conf (Control *control, xmlNodePtr node)
 		xmlSetProp(node, (const xmlChar *) "menu_style", "modern");
 	} else {
 		xmlSetProp(node, (const xmlChar *) "menu_style", "traditional");
+	}
+
+	if (menu->first_show_menu) {
+		xmlSetProp(node, (const xmlChar *) "menu_first", "true");
+	} else {
+		xmlSetProp(node, (const xmlChar *) "menu_first", "false");
 	}
 }
 

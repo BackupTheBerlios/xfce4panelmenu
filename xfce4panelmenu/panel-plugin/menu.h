@@ -133,6 +133,9 @@ typedef struct Menu {
 
 	GtkWidget *col_boxes[COLUMNS_COUNT];
 
+	GtkWidget *menu_boxes[COLUMNS_COUNT];
+	struct menu_entry *user_apps[COLUMNS_COUNT];
+
 	int r_apps_count;
 
 	MenuStyle menu_style;
@@ -171,8 +174,6 @@ typedef struct MenuClass {
 
 GType menu_get_type ();
 GtkWidget *menu_new ();
-void menu_repack_recent_apps (Menu *menu);
-void menu_repack_user_apps (Menu *menu);
 void show_menu_widget (GtkWidget *widget);
 void set_menu_style (Menu *menu, MenuStyle style);
 
