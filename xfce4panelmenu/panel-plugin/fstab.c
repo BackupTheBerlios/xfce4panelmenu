@@ -180,11 +180,11 @@ static GtkTreeModel *create_model (FsTabWidget *ft)
 	GtkTreeIter iter;
 	FILE *file;
 	char fsopt[1024];
-	char name[FILENAME_MAX];
-	char dev[FILENAME_MAX];
+	char name[FILENAME_MAX + 1];
+	char dev[FILENAME_MAX + 1];
 	char fs[32];
 	char opt[128];
-	char line[FILENAME_MAX];
+	char line[FILENAME_MAX + 1];
 
 	list = gtk_list_store_new (COLUMNS,
 				   G_TYPE_STRING,
@@ -342,8 +342,16 @@ static void update_model (FsTabWidget *ft)
 
 					count = readlink (mdev, buffer, 1024);
 					if (count > 0) {
+						char *dev = (char *) tmp->data;
+						int len = strlen (dev);
+
+						if (dev[0] != '/') continue;
+
 						buffer[count] = '\0';
-						if (strcmp ((char *) tmp->data, buffer) == 0) {
+						for (; dev[len] != '/'; len--);
+						memmove (buffer + len + 1, buffer, count + 1);
+						strncpy (buffer, dev, len + 1);
+						if (strcmp (dev, buffer) == 0) {
 							state = g_strdup (_("mounted"));
 							gtk_list_store_set
 								(GTK_LIST_STORE (model), &iter,
