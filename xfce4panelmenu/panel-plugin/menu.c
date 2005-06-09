@@ -56,7 +56,9 @@ enum {
 	TITLE = 0,
 	LUNCHER,
 	SYSTEM,
+	SYSTEM_END,
 	EXTERNAL,
+	EXTERNAL_END,
 	SEPARATOR,
 	MENU,
 	BUILTIN
@@ -77,6 +79,8 @@ struct menu_entry {
 
 	int count;
 };
+
+struct menu_entry *parse_menu (char *read_file, struct menu_entry *parent);
 
 #define REC_APP_INIT(X) \
 	(X) = (struct rec_app *) malloc (sizeof (struct rec_app)); \
@@ -272,6 +276,40 @@ struct menu_entry *get_level (xmlNodePtr node, struct menu_entry *parent)
 			xmlFree (visible);
 		}
 
+		if (xmlStrEqual (node->name, "include")) {
+			char *type;
+
+			type = xmlGetProp (node, "type");
+			if (xmlStrEqual (type, "file")) {
+				char *file;
+				struct menu_entry *tmp2 = NULL;
+
+				file = xmlGetProp (node, "src");
+				tmp = parse_menu (file, parent);
+
+				if (!tmp) {
+					xmlFree (file);
+					continue;
+				}
+
+				tmp2 = init_menu_entry (parent);
+				tmp2->type = EXTERNAL;
+				tmp2->name = file;
+
+				level = append_menu_entry (level, tmp2);
+
+				level = append_menu_entry (level, tmp);
+
+				tmp2 = init_menu_entry (parent);
+				tmp2->type = EXTERNAL_END;
+				tmp2->name = file;
+
+				level = append_menu_entry (level, tmp2);
+			}
+			if (xmlStrEqual (type, "system")) {
+
+			}
+		}
 		if (xmlStrEqual (node->name, "menu")) {
 			tmp = init_menu_entry (parent);
 			level = append_menu_entry (level, tmp);
@@ -326,16 +364,12 @@ struct menu_entry *get_level (xmlNodePtr node, struct menu_entry *parent)
 
 /* 			tmp->type = BUILTIN; */
 /* 		} */
-/* 		if (xmlStrEqual (node->name, "include")) { */
-/* 			tmp = init_menu_entry (parent); */
-/* 			level = append_menu_entry (level, tmp); */
-/* 		} */
 	}
 
 	return level;
 }
 
-struct menu_entry *parse_menu (char *read_file)
+struct menu_entry *parse_menu (char *read_file, struct menu_entry *parent)
 {
 	xmlDocPtr doc = NULL;
 	xmlNodePtr node = NULL;
@@ -348,7 +382,7 @@ struct menu_entry *parse_menu (char *read_file)
 	doc = xmlParseFile (read_file);
 	node = xmlDocGetRootElement (doc);
 
-	menu = get_level (node->children, NULL);
+	menu = get_level (node->children, parent);
 
 	xmlFreeDoc (doc);
 
@@ -1285,11 +1319,11 @@ GtkWidget *menu_new ()
 	}
 
 	read_file = ms_get_read_file ("recentapps.xml");
-	menu->pop_apps = parse_menu (read_file);
+	menu->pop_apps = parse_menu (read_file, NULL);
 
 /* 	if (menu->menu_shown && menu->menu_style == MODERN) { */
 		read_file = ms_get_read_file ("menu.xml");
-		menu->menu_data = parse_menu (read_file);
+		menu->menu_data = parse_menu (read_file, NULL);
 		g_free (read_file);
 /* 	} */
 
@@ -1530,7 +1564,7 @@ void show_menu_widget (GtkWidget *widget)
 			free_menu_entry (menu->menu_data);
 		}
 		read_file = ms_get_read_file ("menu.xml");
-		menu->menu_data = parse_menu (read_file);
+		menu->menu_data = parse_menu (read_file, NULL);
 		g_free (read_file);
 	}
 
@@ -1598,7 +1632,7 @@ static void show_menu (GtkWidget * self, gpointer data)
 				free_menu_entry (menu->menu_data);
 			}
 			read_file = ms_get_read_file ("menu.xml");
-			menu->menu_data = parse_menu (read_file);
+			menu->menu_data = parse_menu (read_file, NULL);
 			g_free (read_file);
 		}
 
@@ -1632,7 +1666,7 @@ static void show_menu (GtkWidget * self, gpointer data)
 					free_menu_entry (menu->menu_data);
 				}
 				read_file = ms_get_read_file ("menu.xml");
-				menu->menu_data = parse_menu (read_file);
+				menu->menu_data = parse_menu (read_file, NULL);
 				g_free (read_file);
 			}
 			menu->menu_shown = TRUE;
