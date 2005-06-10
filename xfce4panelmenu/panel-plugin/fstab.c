@@ -205,7 +205,7 @@ static GtkTreeModel *create_model (FsTabWidget *ft)
 			char *stock_id;
 			int response;
 			char *markup;
-			GdkPixbuf *pixbuf;
+			GdkPixbuf *pixbuf, *ppixbuf;
 
 			response = sscanf (line, "%s%s%s%s", dev, name, fs, opt);
 
@@ -259,13 +259,29 @@ static GtkTreeModel *create_model (FsTabWidget *ft)
 				pixbuf = gdk_pixbuf_new_from_file_at_size
 					(ICONDIR "/xfce4_xicon2.png", 47, 48, NULL);
 			}
+
+			if (pixbuf) {
+				int x, y;
+				double z;
+
+				x = gdk_pixbuf_get_width (pixbuf); 
+				y = gdk_pixbuf_get_height (pixbuf); 
+
+				z = ((double)40/MAX(x,y));
+
+				ppixbuf = gdk_pixbuf_scale_simple
+					(pixbuf, z*x, z*y, GDK_INTERP_BILINEAR);
+
+				g_object_unref (pixbuf);
+			}
+
 			gtk_list_store_set (list, &iter,
 					    PATH, name,
 					    DEV, dev,
 					    FSTYPE, fs,
 					    OPTIONS, opt,
  					    MARKUP, " ",
-					    ICON, pixbuf,
+					    ICON, ppixbuf,
 					    -1);
 			g_free (stock_id);
 		}
