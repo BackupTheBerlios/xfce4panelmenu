@@ -208,6 +208,55 @@ static void scrolled_box_reset (ScrolledBox *sb)
 
 /******************************************************************************************/
 
+struct ext_file {
+	struct ext_file *child;
+	struct ext_file *next;
+
+	char *file;
+	unsigned int time;
+	struct menu_entry *menu;
+};
+
+struct ext_file *init_ext_file (char *file)
+{
+	struct ext_file *ef;
+	struct stat fi;
+
+	ef = (struct ext_file *) malloc (sizeof (struct ext_file));
+
+	ef->file = strdup (file);
+	ef->next = NULL;
+	ef->child = NULL;
+
+	stat (file, &fi);
+	ef->time = fi.st_mtime;
+
+	return ef;
+}
+
+int free_ext_file (struct ext_file *ef)
+{
+	if (ef->child) {
+		free_ext_file (ef->child);
+	}
+	if (ef->next) {
+		free_ext_file (ef->next);
+	}
+	free (ef->file);
+	free (ef);
+
+	return 0;
+}
+
+struct system_menu {
+
+};
+
+struct menu {
+	struct menu_entry *menu;
+	struct ext_file *external;
+};
+
 struct menu_entry *append_menu_entry (struct menu_entry *menu, struct menu_entry *entry)
 {
 	struct menu_entry *tmp = menu;

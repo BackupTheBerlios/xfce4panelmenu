@@ -220,7 +220,7 @@ gboolean create_menustart_control (Control *control)
 	menustart->button = gtk_button_new ();
 	gtk_button_set_relief(GTK_BUTTON (menustart->button), GTK_RELIEF_NONE);
 	read_file = g_strdup (ICONDIR "/xfce4_xicon.png");
-	pixbuf = gdk_pixbuf_new_from_file_at_size (read_file, 24, 24, NULL);
+	pixbuf = gdk_pixbuf_new_from_file_at_size (read_file, 16, 16, NULL);
 	g_free (read_file);
  	menustart->image = gtk_image_new_from_pixbuf (pixbuf);
 	menustart->box = gtk_hbox_new (FALSE, 5);
@@ -251,7 +251,7 @@ void set_menustart_icon (struct menu_start *menustart, const gchar *path)
 	gtk_container_remove (GTK_CONTAINER (menustart->box), menustart->image);
 
 	if (g_file_test (path, G_FILE_TEST_EXISTS)) {
-		pixbuf = gdk_pixbuf_new_from_file_at_size (path, 24, 24, NULL);
+		pixbuf = gdk_pixbuf_new_from_file_at_size (path, 16, 16, NULL);
 		if (pixbuf) {
 			menustart->icon = g_strdup (path);
 			menustart->image = gtk_image_new_from_pixbuf (pixbuf);
@@ -262,7 +262,7 @@ void set_menustart_icon (struct menu_start *menustart, const gchar *path)
 		}
 	}
 
-	pixbuf = gdk_pixbuf_new_from_file_at_size (ICONDIR "/xfce4_xicon.png", 24, 24, NULL);
+	pixbuf = gdk_pixbuf_new_from_file_at_size (ICONDIR "/xfce4_xicon.png", 16, 16, NULL);
 	menustart->image = gtk_image_new_from_pixbuf (pixbuf);
 	gtk_box_pack_start (GTK_BOX (menustart->box), menustart->image, FALSE, FALSE, 0);
 	gtk_widget_show_all (menustart->box);
