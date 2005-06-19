@@ -1031,12 +1031,15 @@ menu_start_create_button_image (GtkWidget *image, gchar * text,
 	gtk_label_set_ellipsize (GTK_LABEL (label), PANGO_ELLIPSIZE_END);
 	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
 	button_hbox = gtk_hbox_new (FALSE, 5);
+
 	gtk_box_pack_start (GTK_BOX (button_hbox), image, FALSE, FALSE, 0);
 	gtk_box_pack_start (GTK_BOX (button_hbox), label, TRUE, TRUE, 0);
+
 	gtk_container_add (GTK_CONTAINER (button), button_hbox);
 	gtk_button_set_relief (GTK_BUTTON (button), GTK_RELIEF_NONE);
 
 	g_object_set_data (G_OBJECT (button), "label", label);
+	g_object_set_data (G_OBJECT (button), "box", button_hbox);
 
 	if (callback)
 		g_signal_connect (G_OBJECT (button), "clicked",
@@ -1044,6 +1047,22 @@ menu_start_create_button_image (GtkWidget *image, gchar * text,
 
 	return button;
 }
+
+/* static gboolean enter_arrow (GtkWidget *self, GdkEventCrossing *event, gpointer data) */
+/* { */
+/* 	GObject *button = (GObject *) data; */
+
+/* 	printf("enter\n"); */
+
+/* 	//g_signal_emit_by_name (button, "clicked"); */
+
+/* 	return FALSE; */
+/* } */
+
+/* static gboolean enter_arrow_b (GtkWidget *self, GdkEventCrossing *event, gpointer data) */
+/* { */
+/* 	return FALSE; */
+/* } */
 
 GtkWidget *menu_start_create_button_name (char *icon, gchar * text,
 					  GCallback callback, gpointer data,
@@ -1069,7 +1088,32 @@ GtkWidget *menu_start_create_button_name (char *icon, gchar * text,
 	}
 	image = gtk_image_new_from_pixbuf (pixbuf);
 
-	return menu_start_create_button_image (image, text, callback, data, bold);
+	button = menu_start_create_button_image (image, text, callback, data, bold);
+
+	if (bold) {
+		GtkWidget *arrow;
+/* 		GtkWidget *arrow_box; */
+
+/* 		g_signal_connect (G_OBJECT (button), "enter-notify-event", */
+/* 				  G_CALLBACK (enter_arrow_b), NULL); */
+
+		button_hbox = g_object_get_data (G_OBJECT (button), "box");
+
+/* 		g_signal_connect (G_OBJECT (button_hbox), "enter-notify-event", */
+/* 				  G_CALLBACK (enter_arrow_b), NULL); */
+
+/* 		arrow_box = gtk_event_box_new (); */
+
+		arrow = gtk_image_new_from_stock ("gtk-go-forward", GTK_ICON_SIZE_MENU);
+/* 		g_signal_connect (G_OBJECT (arrow_box), "enter-notify-event", */
+/* 				  G_CALLBACK (enter_arrow), button); */
+/* 		gtk_container_add (GTK_CONTAINER (arrow_box), arrow); */
+
+/* 		g_object_set_data (G_OBJECT (button), "arrow", arrow); */
+		gtk_box_pack_start (GTK_BOX (button_hbox), arrow, FALSE, FALSE, 0);
+	}
+
+	return button;
 }
 
 GtkWidget *menu_start_create_button (gchar * stock_id, gchar * text,
